@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    await assertSafeOutboundUrl(targetUrl);
     const response = await fetch(targetUrl, {
       headers: {
         'Accept': 'application/json',
@@ -77,6 +79,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof SsrfGuardError) {
+      return NextResponse.json({ error: 'Blocked: target address not allowed' }, { status: 403, headers: CORS_HEADERS });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch from danmaku API' },
       { status: 502, headers: CORS_HEADERS }

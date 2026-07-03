@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 // We still import this type but won't rely on the empty array
@@ -53,6 +54,7 @@ async function handleCategoryRequest(
                     url.searchParams.set('t', sourceMap.get(source.id)!);
                 }
 
+                await assertSafeOutboundUrl(url.toString());
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
 

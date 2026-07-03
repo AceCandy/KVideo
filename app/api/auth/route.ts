@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
+import { logAudit } from '@/lib/server/observability';
 import {
   authenticateLogin,
   createLoginResponse,
@@ -13,6 +15,14 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`login:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { valid: false, message: 'Too many login attempts' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   try {
     const body = await request.json();
     const { username, password, type } = body || {};
@@ -28,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     const session = await authenticateLogin({ username, password });
     if (!session) {
+      logAudit('login_failed', { ip, username: typeof username === 'string' ? username : undefined });
       return NextResponse.json({ valid: false });
     }
 

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRuntimeFeatures } from '@/lib/server/runtime-features';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -114,6 +115,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const parsedUrl = new URL(url);
+    await assertSafeOutboundUrl(url);
     const fetchHeaders: Record<string, string> = {
       'User-Agent': customUa || REALISTIC_USER_AGENT,
       'Accept': '*/*',

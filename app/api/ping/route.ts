@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
             new URL(url);
         } catch {
             return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+        }
+
+        try {
+            await assertSafeOutboundUrl(url);
+        } catch {
+            return NextResponse.json({ error: 'Blocked: target address not allowed' }, { status: 403 });
         }
 
         const startTime = performance.now();

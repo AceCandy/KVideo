@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const parsedUrl = new URL(url);
+    await assertSafeOutboundUrl(url);
     let refererOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`;
     if (customReferer) {
       try {
@@ -52,6 +54,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (e) {
+    if (e instanceof SsrfGuardError) {
+      return NextResponse.json({ error: 'Blocked: target address not allowed' }, { status: 403 });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch M3U playlist' },
       { status: 500 }

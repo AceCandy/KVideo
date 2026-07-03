@@ -6,6 +6,7 @@ import {
   isSuperAdminSession,
   updateManagedAccount,
 } from '@/lib/server/auth';
+import { logAudit } from '@/lib/server/observability';
 
 export const runtime = 'edge';
 
@@ -40,6 +41,7 @@ export async function PATCH(
     const { accountId } = await context.params;
     const body = await request.json();
     const account = await updateManagedAccount(accountId, body);
+    logAudit('account_update', { accountId });
     return NextResponse.json({ account });
   } catch (error) {
     return NextResponse.json(
@@ -61,6 +63,7 @@ export async function DELETE(
   try {
     const { accountId } = await context.params;
     await deleteManagedAccount(accountId);
+    logAudit('account_delete', { accountId });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

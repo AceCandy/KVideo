@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -8,6 +9,12 @@ export async function GET(request: Request) {
 
     if (!imageUrl) {
         return NextResponse.json({ error: 'Missing image URL' }, { status: 400 });
+    }
+
+    try {
+        await assertSafeOutboundUrl(imageUrl);
+    } catch {
+        return NextResponse.json({ error: 'Blocked: target address not allowed' }, { status: 403 });
     }
 
     try {

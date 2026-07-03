@@ -5,8 +5,9 @@
  * Caps results per source and total to prevent OOM.
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { searchVideos } from '@/lib/api/client';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { getSourceName } from '@/lib/utils/source-names';
 import { traditionalToSimplified } from '@/lib/utils/chinese-convert';
 
@@ -17,6 +18,15 @@ const MAX_PAGES_PER_SOURCE = 3;
 const PER_SOURCE_TIMEOUT_MS = 20000;
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`search:${ip}`, { limit: 30, windowSec: 60 });
+  if (!rl.success) {
+    return new NextResponse(
+      JSON.stringify({ type: 'error', message: 'Too many requests' }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

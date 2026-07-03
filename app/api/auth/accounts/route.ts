@@ -6,6 +6,7 @@ import {
   isSuperAdminSession,
   listAccountInfo,
 } from '@/lib/server/auth';
+import { logAudit } from '@/lib/server/observability';
 
 export const runtime = 'edge';
 
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const account = await createManagedAccount(body);
+    logAudit('account_create', { accountId: account.id, username: account.username });
     return NextResponse.json({ account }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

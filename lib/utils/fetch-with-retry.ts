@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { assertSafeOutboundUrl } from '@/lib/server/url-guard';
 
 interface FetchWithRetryOptions {
     url: string;
@@ -21,6 +22,9 @@ export async function fetchWithRetry({ url, request, headers = {} }: FetchWithRe
 
     // Optional IP forwarding (default: Beijing IP)
     const forwardedIP = request.nextUrl.searchParams.get('ip') || '202.108.22.5';
+
+    // SSRF guard：拦截内网 / 元数据目标
+    await assertSafeOutboundUrl(url);
 
     const MAX_RETRIES = 5;
     const TIMEOUT_MS = 30000; // 30 seconds

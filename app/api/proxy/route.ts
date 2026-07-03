@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processM3u8Content } from '@/lib/utils/proxy-utils';
 import { fetchWithRetry } from '@/lib/utils/fetch-with-retry';
 import { getRuntimeFeatures } from '@/lib/server/runtime-features';
+import { SsrfGuardError } from '@/lib/server/url-guard';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
+import { reportError, sanitizeUrlForLog } from '@/lib/server/observability';
 
 export const runtime = 'edge';
 
@@ -19,6 +22,22 @@ export async function GET(request: NextRequest) {
                 message: runtimeFeatures.restrictionSummary,
             },
             { status: 403 }
+        );
+    }
+
+    const ip = getClientIp(request);
+    const rl = await rateLimit(`proxy:${ip}`, { limit: 120, windowSec: 60 });
+    if (!rl.success) {
+        return new NextResponse(
+            JSON.stringify({ error: 'Too many requests' }),
+            {
+                status: 429,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Retry-After': String(rl.retryAfter),
+                    'Access-Control-Allow-Origin': '*',
+                },
+            }
         );
     }
 
@@ -112,7 +131,13 @@ export async function GET(request: NextRequest) {
             headers: headers,
         });
     } catch (error) {
-        console.error('Proxy error:', error);
+        if (error instanceof SsrfGuardError) {
+            return new NextResponse(
+                JSON.stringify({ error: 'Blocked: target address not allowed' }),
+                { status: 403, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+            );
+        }
+        await reportError(error, { url: sanitizeUrlForLog(url || '') });
         return new NextResponse(
             JSON.stringify({
                 error: 'Proxy request failed',

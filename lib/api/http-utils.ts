@@ -3,8 +3,8 @@
  * Handles timeouts and retries
  */
 
-// Disable SSL verification for video sources with invalid certificates
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+import { assertSafeOutboundUrl } from '@/lib/server/url-guard';
+import { dispatcherForUrl } from '@/lib/server/tls-policy';
 
 const REQUEST_TIMEOUT = 15000;
 const MAX_RETRIES = 3;
@@ -35,10 +35,14 @@ export async function fetchWithTimeout(
     }
 
     try {
-        const response = await fetch(url, {
+        await assertSafeOutboundUrl(url);
+        const fetchOptions: RequestInit & { dispatcher?: unknown } = {
             ...options,
             signal: controller.signal,
-        });
+        };
+        const dispatcher = await dispatcherForUrl(url);
+        if (dispatcher) fetchOptions.dispatcher = dispatcher;
+        const response = await fetch(url, fetchOptions);
         clearTimeout(timeoutId);
         return response;
     } catch (error) {

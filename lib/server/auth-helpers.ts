@@ -40,6 +40,9 @@ const PBKDF2_ITERATIONS = 120_000;
 const PBKDF2_KEY_BYTES = 32;
 const SESSION_TOKEN_VERSION = 'v1';
 
+/** session 最长存活时间（秒），与 cookie maxAge 对齐，并在服务端独立强制过期 */
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
 function bytesToBinary(bytes: Uint8Array): string {
   let binary = '';
   for (const byte of bytes) {
@@ -157,6 +160,12 @@ export async function verifySessionToken(token: string, secret: string): Promise
     const payload = JSON.parse(decodeText(decodeBase64Url(encodedPayload)));
     if (!payload || typeof payload !== 'object') return null;
     if (!payload.accountId || !payload.profileId || !payload.name || !payload.role || !payload.mode || !payload.iat) {
+      return null;
+    }
+
+    // 服务端独立强制过期：iat 超过 SESSION_MAX_AGE_SECONDS 即失效，不依赖 cookie maxAge
+    const issuedAt = Number(payload.iat);
+    if (!Number.isFinite(issuedAt) || issuedAt + SESSION_MAX_AGE_SECONDS * 1000 < Date.now()) {
       return null;
     }
 

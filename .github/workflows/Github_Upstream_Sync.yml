@@ -10,9 +10,9 @@ env:
   TARGET_BRANCH: main
   SYNC_BRANCH: upstream-sync-conflict # The branch name used if a conflict occurs
 
+# 仅保留手动触发；自动每 6h 全量合并已停用，改为锁定基线 + 选择性 cherry-pick。
+# 详见 docs/upstream-sync-strategy.md
 on:
-  schedule:
-    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 concurrency:

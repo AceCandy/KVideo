@@ -7,7 +7,9 @@ const nextConfig: NextConfig = {
 
   // Compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // 生产环境剥离 debug/info 日志，但保留 error/warn 用于排障与审计
+    removeConsole:
+      process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
 
   output: 'standalone',

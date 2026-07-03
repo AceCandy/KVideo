@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PREMIUM_SOURCES } from '@/lib/api/premium-sources';
+import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -27,6 +28,7 @@ async function handleTypesRequest(sourceList: any[]) {
                     const url = new URL(source.baseUrl);
                     url.searchParams.set('ac', 'list');
 
+                    await assertSafeOutboundUrl(url.toString());
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
