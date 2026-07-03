@@ -42,3 +42,7 @@ next-env.d.ts
 
 # unused/generated files
 contrast-test-results.json
+
+# local agent/tool state
+.claude/settings.local.json
+.impeccable/config.local.json

@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-03T11:09:00+08:00",
+  "title": "Design System: KVideo",
+  "extensions": {
+    "colorMeta": {
+      "bg-light": {
+        "role": "neutral",
+        "displayName": "Cool App Light",
+        "canonical": "#f2f4f7",
+        "tonalRamp": ["oklch(18% 0.01 255)", "oklch(28% 0.01 255)", "oklch(40% 0.01 255)", "oklch(52% 0.01 255)", "oklch(64% 0.01 255)", "oklch(76% 0.01 255)", "oklch(88% 0.01 255)", "oklch(96% 0.01 255)"]
+      },
+      "bg-dark": {
+        "role": "neutral",
+        "displayName": "Cinema Black",
+        "canonical": "#121212",
+        "tonalRamp": ["#050505", "#121212", "#242424", "#383838", "#575757", "#797979", "#b0b0b0", "#eeeeee"]
+      },
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Action Blue Light",
+        "canonical": "#0056b3",
+        "tonalRamp": ["oklch(18% 0.08 255)", "oklch(28% 0.11 255)", "oklch(38% 0.14 255)", "oklch(48% 0.16 255)", "oklch(58% 0.16 255)", "oklch(70% 0.13 255)", "oklch(82% 0.08 255)", "oklch(94% 0.04 255)"]
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Action Blue Dark",
+        "canonical": "#1a6dbf",
+        "tonalRamp": ["oklch(20% 0.08 255)", "oklch(30% 0.11 255)", "oklch(40% 0.14 255)", "oklch(50% 0.16 255)", "oklch(60% 0.16 255)", "oklch(72% 0.13 255)", "oklch(84% 0.08 255)", "oklch(95% 0.04 255)"]
+      },
+      "glass-light": {
+        "role": "neutral",
+        "displayName": "Glass Surface Light",
+        "canonical": "#fffffff2",
+        "tonalRamp": ["oklch(20% 0 0)", "oklch(32% 0 0)", "oklch(45% 0 0)", "oklch(58% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(92% 0 0)", "oklch(98% 0 0)"]
+      },
+      "glass-dark": {
+        "role": "neutral",
+        "displayName": "Glass Surface Dark",
+        "canonical": "#1e1e1ee6",
+        "tonalRamp": ["#050505", "#1e1e1e", "#2e2e2e", "#444444", "#636363", "#858585", "#b8b8b8", "#f0f0f0"]
+      },
+      "player-surface": {
+        "role": "neutral",
+        "displayName": "Player Control Glass",
+        "canonical": "#1c1c1ebf",
+        "tonalRamp": ["#050506", "#1c1c1e", "#303033", "#48484d", "#66666d", "#898992", "#bbbbc2", "#f0f0f4"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "App name and rare top-level headers inside the product shell."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section, modal, and settings group headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Video card titles, metadata groups, and compact panels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Readable prose, settings descriptions, and empty-state guidance."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, tabs, chips, badges, field labels, and compact controls."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting-hairline",
+        "value": "0 1px 2px var(--shadow-color)",
+        "purpose": "Quiet resting depth for nav, badges, and subtle panels."
+      },
+      {
+        "name": "panel-lift",
+        "value": "0 4px 6px var(--shadow-color)",
+        "purpose": "Stable elevated panels, settings sections, and dropdowns."
+      },
+      {
+        "name": "interactive-hover",
+        "value": "0 8px 24px var(--shadow-color)",
+        "purpose": "Hover feedback for cards or panels that lift."
+      },
+      {
+        "name": "player-overlay-depth",
+        "value": "0 8px 32px rgba(0, 0, 0, 0.3)",
+        "purpose": "In-player controls and overlays on top of video."
+      },
+      {
+        "name": "focus-glow",
+        "value": "0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent)",
+        "purpose": "Focused inputs and high-attention controls."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-fluid",
+        "value": "0.3s ease",
+        "purpose": "Default simple state transitions."
+      },
+      {
+        "name": "liquid-control",
+        "value": "0.4s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Glass controls, switches, and player overlays."
+      },
+      {
+        "name": "quick-feedback",
+        "value": "0.2s ease-out",
+        "purpose": "Card and button hover movement."
+      },
+      {
+        "name": "overlay-fade",
+        "value": "0.3s ease",
+        "purpose": "Modal backdrops, player controls, and visibility changes."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button for search, save, confirm, and active workflow actions.",
+      "html": "<button class=\"ds-btn-primary\">搜索</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.75rem 1.25rem; border: 0; border-radius: var(--radius-2xl); background: var(--accent-color); color: #fff; font: 600 1rem/1.2 var(--font-family-system); cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 1px 2px var(--shadow-color); } .ds-btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 6px var(--shadow-color); } .ds-btn-primary:active { transform: translateY(0) scale(0.98); filter: brightness(0.95); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }"
+    },
+    {
+      "name": "Secondary Glass Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action with glass surface and fine border.",
+      "html": "<button class=\"ds-btn-secondary\">取消</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.75rem 1.25rem; border: 1px solid var(--glass-border); border-radius: var(--radius-2xl); background: var(--glass-bg); color: var(--text-color); font: 600 1rem/1.2 var(--font-family-system); cursor: pointer; transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 1px 2px var(--shadow-color); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--accent-color) 10%, var(--glass-bg)); box-shadow: 0 4px 6px var(--shadow-color); } .ds-btn-secondary:active { transform: scale(0.98); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Full-width glass search field with blue focus treatment.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">搜索</span><input class=\"ds-input\" placeholder=\"搜索电影、电视剧、综艺...\" /></label>",
+      "css": ".ds-field { display: block; width: 100%; font-family: var(--font-family-system); } .ds-field-label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-size: 0.875rem; font-weight: 600; } .ds-input { width: 100%; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-2xl); background: var(--glass-bg); color: var(--text-color); font: 400 1rem/1.4 var(--font-family-system); backdrop-filter: blur(10px) saturate(150%); transition: border-color var(--transition-fluid), box-shadow var(--transition-fluid); } .ds-input::placeholder { color: var(--text-color-secondary); opacity: 1; } .ds-input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent); }"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Default Liquid Glass panel used for grouped content and settings sections.",
+      "html": "<article class=\"ds-card\"><h3>显示设置</h3><p>控制首页、播放页和列表的展示偏好。</p></article>",
+      "css": ".ds-card { padding: 1.5rem; border: 1px solid var(--glass-border); border-radius: var(--radius-2xl); background: var(--glass-bg); color: var(--text-color); box-shadow: 0 4px 6px var(--shadow-color); font-family: var(--font-family-system); transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; } .ds-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--shadow-color); } .ds-card h3 { margin: 0 0 0.5rem; font-size: 1.25rem; line-height: 1.3; font-weight: 600; } .ds-card p { margin: 0; color: var(--text-color-secondary); font-size: 0.875rem; line-height: 1.6; }"
+    },
+    {
+      "name": "Primary Badge",
+      "kind": "chip",
+      "refersTo": "badge-primary",
+      "description": "Compact source or state badge for video cards and metadata.",
+      "html": "<span class=\"ds-badge-primary\">主源</span>",
+      "css": ".ds-badge-primary { display: inline-flex; align-items: center; justify-content: center; max-width: 100%; padding: 0.125rem 0.375rem; border-radius: var(--radius-full); background: var(--accent-color); color: #fff; font: 700 10px/1.2 var(--font-family-system); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 2px var(--shadow-color); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-control",
+      "description": "Two-or-more option selector with a blue sliding active indicator.",
+      "html": "<div class=\"ds-segmented\" role=\"tablist\"><button class=\"is-active\">电影</button><button>电视剧</button></div>",
+      "css": ".ds-segmented { position: relative; display: inline-flex; gap: 0; padding: 0.25rem; border: 1px solid var(--glass-border); border-radius: var(--radius-2xl); background: var(--glass-bg); box-shadow: 0 1px 2px var(--shadow-color); font-family: var(--font-family-system); } .ds-segmented button { min-height: 36px; padding: 0.5rem 1rem; border: 0; border-radius: calc(var(--radius-2xl) - 4px); background: transparent; color: var(--text-color-secondary); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: color 0.2s ease, background 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-segmented button:hover { color: var(--text-color); } .ds-segmented button.is-active { background: var(--accent-color); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-color) 30%, transparent); } .ds-segmented button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }"
+    },
+    {
+      "name": "Switch",
+      "kind": "input",
+      "refersTo": "switch",
+      "description": "Binary setting control with pill track and tactile thumb.",
+      "html": "<label class=\"ds-switch\"><input type=\"checkbox\" checked /><span></span></label>",
+      "css": ".ds-switch { position: relative; display: inline-flex; width: 50px; height: 30px; cursor: pointer; } .ds-switch input { position: absolute; opacity: 0; pointer-events: none; } .ds-switch span { width: 100%; height: 100%; border-radius: var(--radius-full); background: color-mix(in srgb, var(--text-color) 20%, transparent); transition: background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-switch span::before { content: ''; position: absolute; width: 26px; height: 26px; left: 2px; bottom: 2px; border-radius: var(--radius-full); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-switch input:checked + span { background: var(--accent-color); } .ds-switch input:checked + span::before { transform: translateX(20px); } .ds-switch input:focus-visible + span { outline: 2px solid var(--accent-color); outline-offset: 2px; }"
+    },
+    {
+      "name": "Player Glass Control",
+      "kind": "button",
+      "refersTo": "player-control",
+      "description": "In-player icon control over video surfaces.",
+      "html": "<button class=\"ds-player-control\" aria-label=\"播放\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 5v14l11-7z\" /></svg></button>",
+      "css": ".ds-player-control { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem; border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-2xl); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; backdrop-filter: blur(10px); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-player-control svg { width: 20px; height: 20px; fill: currentColor; } .ds-player-control:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); transform: translateY(-2px) scale(1.05); } .ds-player-control:active { transform: translateY(0) scale(0.95); } .ds-player-control:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clear Glass Theater",
+    "overview": "KVideo is a task-first video interface with a restrained Liquid Glass layer system. The experience should feel immersive enough for playback, clear enough for source comparison, and trustworthy enough for self-hosted configuration. The visual language starts with cool neutral surfaces, one blue primary accent, glass panels, pill controls, and dense but legible content grids.\n\nThe system rejects generic streaming-service spectacle. Posters and video should carry the cinematic energy; the interface stays quiet, legible, and predictable. Glass effects are allowed only when they separate navigation, panels, overlays, and controls without harming contrast or focus clarity.\n\nThe product is used across desktop, mobile, PWA, and TV/remote contexts, so the same visual vocabulary must survive different densities. Buttons, filters, playback controls, settings panels, and source badges should feel related even when their layout changes.",
+    "keyCharacteristics": [
+      "Cool light and dark surfaces with a single blue accent for primary actions and active state.",
+      "Liquid Glass panels with soft borders, restrained shadows, and clear foreground text.",
+      "System sans typography with compact hierarchy and fixed rem sizing.",
+      "Pill-shaped badges and icon controls for scan-friendly metadata.",
+      "Motion limited to state feedback, loading, overlays, and playback controls."
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "Blue is for action, focus, selection, progress, and active state. It is not page decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Glass Contrast Rule",
+        "body": "A glass surface must keep body text at WCAG AA contrast. If blur or translucency makes text look washed out, increase opacity or darken the text before adding more effect.",
+        "section": "colors"
+      },
+      {
+        "name": "The Poster Carries Color Rule",
+        "body": "Video artwork supplies most saturated color. Interface chrome stays restrained so metadata and controls remain scannable.",
+        "section": "colors"
+      },
+      {
+        "name": "The Product Scale Rule",
+        "body": "Use fixed rem sizing for product UI. Do not use hero-scale fluid typography for task screens, cards, settings, or playback controls.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Decorative Font Rule",
+        "body": "Do not introduce display, serif, script, or novelty fonts into labels, controls, metadata, or player UI.",
+        "section": "typography"
+      },
+      {
+        "name": "The State Earns Shadow Rule",
+        "body": "Shadows get stronger only for state or stacking: hover, focus, modal, menu, drawer, and player overlay. Static content cards stay quiet.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glass Is Not Fog Rule",
+        "body": "Blur and translucency must clarify hierarchy. If a panel needs more readability, increase surface opacity before increasing blur.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use blue only for action, focus, selection, progress, and active state.",
+      "Do preserve Liquid Glass as a hierarchy system: glass panels, fine borders, and soft shadows must make navigation, panels, overlays, and controls easier to parse.",
+      "Do keep text contrast at WCAG AA, especially secondary text over glass and dark player overlays.",
+      "Do maintain at least 44px touch targets for buttons and core controls.",
+      "Do keep source, type, latency, resolution, sync, permission, and proxy status explicit and scannable.",
+      "Do design mobile, desktop, PWA, and TV/remote variants with the same action vocabulary and state semantics."
+    ],
+    "donts": [
+      "Don't make KVideo look like a generic streaming-service homepage clone with large marketing posters, emotional hero copy, or recommendation spectacle that hides search and playback.",
+      "Don't use glassmorphism as default decoration. Blur, transparency, and shadow are forbidden when they reduce contrast, target clarity, or state recognition.",
+      "Don't use noisy dark entertainment styling: high-saturation neon, complex gradients, or exaggerated motion weaken trust.",
+      "Don't invent non-standard playback or settings controls for flavor. Playback, volume, fullscreen, PiP, filtering, switches, and segmented controls must stay familiar.",
+      "Don't weaken the legal-source responsibility. Deployment and source-setting UI should continue to communicate that users configure authorized, legally usable sources.",
+      "Don't use colored side-stripe borders, gradient text, nested cards, or oversized rounded cards beyond the established 1.5rem panel radius."
+    ]
+  }
+}

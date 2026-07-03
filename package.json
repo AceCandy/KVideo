@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start --port ${PORT:-3000}",
     "lint": "eslint",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "tsx --test tests/**/*.test.ts && node --test tests/**/*.test.mjs",
     "pages:build": "next-on-pages"
   },
   "dependencies": {

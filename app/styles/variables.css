@@ -8,8 +8,10 @@
     --text-color-light: #1d1d1f;
     --text-color-secondary-light: #6e6e73;
     --accent-color-light: #0056b3;
+    --accent-color-rgb-light: 0, 86, 179;
     --glass-bg-light: rgba(255, 255, 255, 0.95);
     --glass-border-light: rgba(0, 0, 0, 0.05);
+    --glass-hover-light: color-mix(in srgb, var(--accent-color-light) 10%, var(--glass-bg-light));
     --shadow-color-light: rgba(0, 0, 0, 0.05);
 
     /* Dark Mode Palette */
@@ -18,8 +20,10 @@
     --text-color-dark: #f5f5f7;
     --text-color-secondary-dark: #8e8e93;
     --accent-color-dark: #1A6DBF;
+    --accent-color-rgb-dark: 26, 109, 191;
     --glass-bg-dark: rgba(30, 30, 30, 0.9);
     --glass-border-dark: rgba(255, 255, 255, 0.1);
+    --glass-hover-dark: color-mix(in srgb, var(--accent-color-dark) 14%, var(--glass-bg-dark));
     --shadow-color-dark: rgba(0, 0, 0, 0.3);
 
     /* Universal Variables */
@@ -35,9 +39,21 @@
     --text-color: var(--text-color-light);
     --text-color-secondary: var(--text-color-secondary-light);
     --accent-color: var(--accent-color-light);
+    --accent-color-rgb: var(--accent-color-rgb-light);
     --glass-bg: var(--glass-bg-light);
     --glass-border: var(--glass-border-light);
+    --glass-hover: var(--glass-hover-light);
     --shadow-color: var(--shadow-color-light);
+    --text-secondary: var(--text-color-secondary);
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
+
+    /* Player viewport defaults; runtime code may override these per viewport. */
+    --kvideo-viewport-width: 100vw;
+    --kvideo-viewport-height: 100vh;
+    --kvideo-stage-viewport-width: var(--kvideo-viewport-width);
+    --kvideo-stage-viewport-height: var(--kvideo-viewport-height);
+    --kvideo-web-scale: 1;
 
     --background: #f2f4f7;
     --foreground: #1d1d1f;
@@ -49,9 +65,14 @@ body {
     --text-color: var(--text-color-light);
     --text-color-secondary: var(--text-color-secondary-light);
     --accent-color: var(--accent-color-light);
+    --accent-color-rgb: var(--accent-color-rgb-light);
     --glass-bg: var(--glass-bg-light);
     --glass-border: var(--glass-border-light);
+    --glass-hover: var(--glass-hover-light);
     --shadow-color: var(--shadow-color-light);
+    --text-secondary: var(--text-color-secondary);
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
 
     background-color: var(--bg-color);
     background-image: var(--bg-image);
@@ -69,9 +90,14 @@ body.dark,
     --text-color: var(--text-color-dark);
     --text-color-secondary: var(--text-color-secondary-dark);
     --accent-color: var(--accent-color-dark);
+    --accent-color-rgb: var(--accent-color-rgb-dark);
     --glass-bg: var(--glass-bg-dark);
     --glass-border: var(--glass-border-dark);
+    --glass-hover: var(--glass-hover-dark);
     --shadow-color: var(--shadow-color-dark);
+    --text-secondary: var(--text-color-secondary);
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
 
     --background: #121212;
     --foreground: #f5f5f7;
