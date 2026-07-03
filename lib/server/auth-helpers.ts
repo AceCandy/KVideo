@@ -286,3 +286,35 @@ export async function createStoredAccount(
     updatedAt: now,
   };
 }
+
+/**
+ * premium 解锁凭证：无状态 HMAC token，形如 `random.signature`。
+ * 不携带 payload、不落存储，验签即通过；浏览器会话级，与前端 sessionStorage 语义对齐。
+ */
+export async function signPremiumToken(secret: string): Promise<string> {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const random = encodeBase64Url(bytes);
+  const key = await importHmacKey(secret);
+  const signature = await crypto.subtle.sign('HMAC', key, toArrayBuffer(encodeText(random)));
+  return `${random}.${encodeBase64Url(new Uint8Array(signature))}`;
+}
+
+/** 校验 premium token 签名；空值、格式错或签名不符均返回 false */
+export async function verifyPremiumToken(token: string | undefined, secret: string): Promise<boolean> {
+  if (!token) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [random, encodedSignature] = parts;
+  try {
+    const key = await importHmacKey(secret);
+    return await crypto.subtle.verify(
+      'HMAC',
+      key,
+      toArrayBuffer(decodeBase64Url(encodedSignature)),
+      toArrayBuffer(encodeText(random))
+    );
+  } catch {
+    return false;
+  }
+}

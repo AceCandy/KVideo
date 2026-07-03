@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
+import { hasPremiumAccess } from '@/lib/server/auth';
 
 export const runtime = 'edge';
 // We still import this type but won't rely on the empty array
@@ -109,7 +110,10 @@ async function handleCategoryRequest(
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    if (!(await hasPremiumAccess(request))) {
+        return NextResponse.json({ error: 'Premium access required' }, { status: 401 });
+    }
     try {
         const body = await request.json();
         const { sources, category, page, limit } = body;

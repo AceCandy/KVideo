@@ -10,6 +10,8 @@ import {
   normalizeUsername,
   parseBootstrapAccounts,
   verifyPassword,
+  signPremiumToken,
+  verifyPremiumToken,
   type StoredAccountRecord,
 } from '@/lib/server/auth-helpers';
 import {
@@ -30,6 +32,8 @@ import {
   effectiveAdminPassword,
   generateLegacyProfileId,
   isLegacyAuthConfigured,
+  PREMIUM_COOKIE_NAME,
+  resolvePremiumSecretFromEnv,
   type LoginMode,
 } from '@/lib/server/auth/config';
 import { getRuntimeFeatures } from '@/lib/server/runtime-features';
@@ -241,6 +245,43 @@ export async function createSessionStatusResponse(request: NextRequest): Promise
     session: session ? toPublicSession(session) : null,
     ...config,
   });
+}
+
+/** premium 解锁成功：下发 httpOnly 签名 cookie，并返回 `{valid:true}` 供前端 UX */
+export async function createPremiumUnlockResponse(): Promise<NextResponse> {
+  const response = NextResponse.json({ valid: true });
+  const secret = resolvePremiumSecretFromEnv();
+  // 无 PREMIUM_PASSWORD 时无需隔离，不下发 cookie；前端凭 valid:true 走 UX 即可
+  if (secret) {
+    const token = await signPremiumToken(secret);
+    response.cookies.set(PREMIUM_COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+  }
+  return response;
+}
+
+/**
+ * premium 内容访问判定：
+ * 1. admin/super_admin session 直通
+ * 2. 未配置 PREMIUM_PASSWORD → 无隔离需求，全放行
+ * 3. 否则校验 premium cookie 签名
+ */
+export async function hasPremiumAccess(request: NextRequest): Promise<boolean> {
+  const session = await getServerSession(request);
+  if (session && (session.role === 'super_admin' || session.role === 'admin')) {
+    return true;
+  }
+  if (!PREMIUM_PASSWORD) {
+    return true;
+  }
+  const token = request.cookies.get(PREMIUM_COOKIE_NAME)?.value;
+  const secret = resolvePremiumSecretFromEnv();
+  if (!secret) return false;
+  return verifyPremiumToken(token, secret);
 }
 
 export async function listAccountInfo(): Promise<AccountInfo[]> {

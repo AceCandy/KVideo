@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { PREMIUM_SOURCES } from '@/lib/api/premium-sources';
 import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
+import { hasPremiumAccess } from '@/lib/server/auth';
 
 export const runtime = 'edge';
 
@@ -162,7 +163,10 @@ async function handleTypesRequest(sourceList: any[]) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    if (!(await hasPremiumAccess(request))) {
+        return NextResponse.json({ error: 'Premium access required' }, { status: 401 });
+    }
     try {
         const body = await request.json();
         const { sources } = body;

@@ -5,7 +5,11 @@
  */
 import { verifySessionToken, type SessionPayload } from '@/lib/server/auth-helpers';
 
-export { SESSION_COOKIE_NAME, resolveSessionSecretFromEnv } from '@/lib/server/auth/config';
+export {
+  SESSION_COOKIE_NAME,
+  PREMIUM_COOKIE_NAME,
+  resolveSessionSecretFromEnv,
+} from '@/lib/server/auth/config';
 export { hasAuthConfigured as hasAuthConfiguredFromEnv } from '@/lib/server/auth/config';
 
 /** 验证 session cookie 值；空值或验签/过期失败均返回 null */

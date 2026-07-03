@@ -9,6 +9,9 @@
 /** session cookie 名，须与前端、middleware 共用 */
 export const SESSION_COOKIE_NAME = 'kvideo_session';
 
+/** premium 解锁 cookie 名，httpOnly、浏览器会话级，由后端在校验通过后下发 */
+export const PREMIUM_COOKIE_NAME = 'kvideo_premium';
+
 /** 运行时配置（进程启动后 env 固定） */
 export const PREMIUM_PASSWORD = process.env.PREMIUM_PASSWORD || '';
 export const PERSIST_SESSION = process.env.PERSIST_SESSION !== 'false';
@@ -57,6 +60,16 @@ export function resolveSessionSecretFromEnv(): string | null {
   const accounts = process.env.ACCOUNTS || '';
   if (!adminPassword && !accounts) return null;
   return `legacy:${adminPassword}:${accounts}:${process.env.PREMIUM_PASSWORD || ''}`;
+}
+
+/**
+ * premium token 验签密钥：AUTH_SECRET 优先，否则由 PREMIUM_PASSWORD 派生。
+ * 保证 premium-only 部署（仅设 PREMIUM_PASSWORD）也能签发与校验，不依赖 session 密钥。
+ */
+export function resolvePremiumSecretFromEnv(): string | null {
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  if (!process.env.PREMIUM_PASSWORD) return null;
+  return `premium:${process.env.PREMIUM_PASSWORD}`;
 }
 
 function buildLegacyProfileIdInput(password: string): ArrayBuffer {

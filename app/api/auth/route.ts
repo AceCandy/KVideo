@@ -4,6 +4,7 @@ import { logAudit } from '@/lib/server/observability';
 import {
   authenticateLogin,
   createLoginResponse,
+  createPremiumUnlockResponse,
   getPublicAuthConfig,
   validatePremiumAccess,
 } from '@/lib/server/auth';
@@ -29,7 +30,11 @@ export async function POST(request: NextRequest) {
 
     if (type === 'premium') {
       const valid = await validatePremiumAccess(request, { username, password });
-      return NextResponse.json({ valid });
+      if (valid) {
+        return createPremiumUnlockResponse();
+      }
+      logAudit('premium_unlock_failed', { ip });
+      return NextResponse.json({ valid: false });
     }
 
     if (!password || typeof password !== 'string') {
