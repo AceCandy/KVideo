@@ -26,6 +26,7 @@ components/
   iptv/                   IPTV feature
     iptv-sidebar/         ChannelSidebar subcomponent
     iptv-controls/        TopBar + BottomControls subcomponents
+    hooks/                useIptvHls (IPTV playback state machine)
 lib/
   store/                  Zustand stores + localStorage primitives
   player/                 Player-domain utilities (source-list-utils, resolution-cache)

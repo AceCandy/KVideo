@@ -1,34 +1,22 @@
 'use client';
 
 /**
- * IPTVPlayer - Player for IPTV streams with controls, volume, progress, and sidebar.
- * Supports HLS (via HLS.js), native HLS (Safari), and direct video playback.
- * Features multi-level sidebar (source -> group -> channels), multi-route collapse,
- * and optimized search performance.
+ * IPTVPlayer - Player shell for IPTV streams.
+ *
+ * Thin orchestrator: composes the `useIptvHls` playback-state-machine hook
+ * with UI state (controls auto-hide, sidebar, route selector, fullscreen,
+ * seek-step), keyboard shortcuts, and the sidebar + control-bar subcomponents.
+ * All playback state and the HLS lifecycle live in the hook.
  */
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import Hls from 'hls.js';
 import type { M3UChannel } from '@/lib/utils/m3u-parser';
 import type { IPTVSource } from '@/lib/store/iptv-store';
 import { settingsStore, DEFAULT_SEEK_STEP_SECONDS } from '@/lib/store/settings-store';
 import { ChannelSidebar } from './iptv-sidebar/ChannelSidebar';
 import { TopBar } from './iptv-controls/TopBar';
 import { BottomControls } from './iptv-controls/BottomControls';
-
-const HLS_LIVE_CONFIG: Partial<Hls['config']> = {
-  enableWorker: true,
-  lowLatencyMode: true,
-  liveDurationInfinity: true,
-  manifestLoadingTimeOut: 10000,
-  manifestLoadingMaxRetry: 3,
-  levelLoadingTimeOut: 10000,
-  fragLoadingTimeOut: 20000,
-  // Prefer H.264 (avc) over HEVC (hev/hvc) for maximum browser compatibility
-  preferManagedMediaSource: false,
-};
-
-const LOADING_TIMEOUT_MS = 30000;
+import { useIptvHls } from './hooks/useIptvHls';
 
 interface IPTVPlayerProps {
   channel: M3UChannel;
@@ -39,52 +27,24 @@ interface IPTVPlayerProps {
   sources?: IPTVSource[];
 }
 
-function getProxiedUrl(url: string, ua?: string, referer?: string): string {
-  let proxyUrl = `/api/iptv/stream?`;
-  if (ua) proxyUrl += `ua=${encodeURIComponent(ua)}&`;
-  if (referer) proxyUrl += `referer=${encodeURIComponent(referer)}&`;
-  proxyUrl += `url=${encodeURIComponent(url)}`;
-  return proxyUrl;
-}
-
-function getSeekRange(video: HTMLVideoElement): { start: number; end: number; duration: number } | null {
-  if (video.seekable.length > 0) {
-    const start = video.seekable.start(0);
-    const end = video.seekable.end(video.seekable.length - 1);
-    if (isFinite(start) && isFinite(end) && end > start) {
-      return { start, end, duration: end - start };
-    }
-  }
-
-  if (isFinite(video.duration) && video.duration > 0) {
-    return { start: 0, end: video.duration, duration: video.duration };
-  }
-
-  return null;
-}
-
 export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channelsBySource, sources }: IPTVPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const [error, setError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isLive, setIsLive] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [seekWindow, setSeekWindow] = useState<{ start: number; end: number; duration: number } | null>(null);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
   const [currentRouteIndex, setCurrentRouteIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAllRoutes, setShowAllRoutes] = useState(false);
   const [seekStepSeconds, setSeekStepSeconds] = useState(DEFAULT_SEEK_STEP_SECONDS);
+
+  const {
+    error, isLoading, isLive, isPlaying, currentTime, duration,
+    seekWindow, volume, isMuted, reload, togglePlay, toggleMute,
+    setVolumeLevel, seekTo,
+  } = useIptvHls(videoRef, progressRef, channel);
 
   // Get current route URL
   const routes = channel.routes || [channel.url];
@@ -118,326 +78,16 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
     }, 3000);
   }, []);
 
-  // Video event handlers
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onTimeUpdate = () => {
-      const range = getSeekRange(video);
-      setCurrentTime(video.currentTime);
-      setSeekWindow(range);
-      if (range) {
-        setDuration(range.duration);
-        setIsLive(false);
-      } else {
-        const dur = video.duration;
-        if (isFinite(dur) && dur > 0) {
-          setDuration(dur);
-        }
-        setIsLive(true);
-      }
-    };
-    const onDurationChange = () => {
-      const range = getSeekRange(video);
-      setSeekWindow(range);
-      if (range) {
-        setDuration(range.duration);
-        setIsLive(false);
-      } else {
-        const dur = video.duration;
-        if (isFinite(dur) && dur > 0) {
-          setDuration(dur);
-        }
-      }
-    };
-    const onVolumeChange = () => {
-      setVolume(video.volume);
-      setIsMuted(video.muted);
-    };
-
-    video.addEventListener('play', onPlay);
-    video.addEventListener('pause', onPause);
-    video.addEventListener('timeupdate', onTimeUpdate);
-    video.addEventListener('durationchange', onDurationChange);
-    video.addEventListener('volumechange', onVolumeChange);
-
-    return () => {
-      video.removeEventListener('play', onPlay);
-      video.removeEventListener('pause', onPause);
-      video.removeEventListener('timeupdate', onTimeUpdate);
-      video.removeEventListener('durationchange', onDurationChange);
-      video.removeEventListener('volumechange', onVolumeChange);
-    };
-  }, []);
-
-  const loadChannel = useCallback((url: string) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    setError(null);
-    setIsLoading(true);
-    setIsLive(true);
-    setCurrentTime(0);
-    setDuration(0);
-    setSeekWindow(null);
-
-    // Clean up previous
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = undefined;
-    }
-    video.removeAttribute('src');
-    video.load();
-
-    const proxiedUrl = getProxiedUrl(url, channel.httpUserAgent, channel.httpReferrer);
-    const hasCustomHeaders = !!(channel.httpUserAgent || channel.httpReferrer);
-    // When custom headers are needed, skip direct attempt (browsers cannot set
-    // User-Agent on XHR/fetch). Always go through our proxy which can forward
-    // the headers server-side. This fixes audio-only issues on CCTV and similar.
-    const initialUrl = hasCustomHeaders ? proxiedUrl : url;
-
-    // Global loading timeout
-    let loadingResolved = false;
-    const markLoaded = () => {
-      if (loadingResolved) return;
-      loadingResolved = true;
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = undefined;
-      }
-      setIsLoading(false);
-    };
-    const markError = (msg: string) => {
-      if (loadingResolved) return;
-      loadingResolved = true;
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = undefined;
-      }
-      setIsLoading(false);
-      setError(msg);
-    };
-
-    loadingTimeoutRef.current = setTimeout(() => {
-      markError('加载超时，请尝试其他线路或频道');
-    }, LOADING_TIMEOUT_MS);
-
-    if (Hls.isSupported()) {
-      const hls = new Hls(HLS_LIVE_CONFIG);
-      hlsRef.current = hls;
-
-      let triedProxy = false;
-      let triedDirect = false;
-
-      const tryDirectVideo = (directUrl: string) => {
-        if (triedDirect) {
-          markError('播放错误，请尝试其他线路或频道');
-          return;
-        }
-        triedDirect = true;
-        const vid = videoRef.current;
-        if (!vid) return;
-        vid.src = directUrl;
-        vid.addEventListener('canplay', () => {
-          markLoaded();
-          vid.play().catch(() => {});
-        }, { once: true });
-        vid.addEventListener('error', () => {
-          if (directUrl === url) {
-            // Try proxied direct video
-            const vid2 = videoRef.current;
-            if (!vid2) return;
-            vid2.src = proxiedUrl;
-            vid2.addEventListener('canplay', () => {
-              markLoaded();
-              vid2.play().catch(() => {});
-            }, { once: true });
-            vid2.addEventListener('error', () => {
-              markError('播放错误，请尝试其他线路或频道');
-            }, { once: true });
-          } else {
-            markError('播放错误，请尝试其他线路或频道');
-          }
-        }, { once: true });
-      };
-
-      const tryWithProxy = () => {
-        if (triedProxy) {
-          tryDirectVideo(url);
-          return;
-        }
-        triedProxy = true;
-        hls.destroy();
-        const hlsProxy = new Hls(HLS_LIVE_CONFIG);
-        hlsRef.current = hlsProxy;
-        hlsProxy.loadSource(proxiedUrl);
-        hlsProxy.attachMedia(video);
-
-        // Filter HEVC levels for proxy attempt too
-        hlsProxy.on(Hls.Events.MANIFEST_PARSED, () => {
-          filterHEVCLevels(hlsProxy);
-          markLoaded();
-          video.play().catch(() => {});
-        });
-        hlsProxy.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) {
-            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-              hlsProxy.recoverMediaError();
-            } else {
-              hlsProxy.destroy();
-              hlsRef.current = null;
-              tryDirectVideo(url);
-            }
-          }
-        });
-      };
-
-      // Helper: Filter out HEVC levels that browser may not support (fixes audio-only issue)
-      const filterHEVCLevels = (hlsInstance: Hls) => {
-        if (!hlsInstance.levels || hlsInstance.levels.length <= 1) return;
-        const h264Levels = hlsInstance.levels
-          .map((level, index) => ({ level, index }))
-          .filter(({ level }) => {
-            const codec = level.videoCodec?.toLowerCase() || '';
-            // Keep levels without HEVC codec (H.264 or unknown)
-            return !codec.includes('hev') && !codec.includes('h265') && !codec.includes('hvc');
-          });
-        // If we have H.264 levels, restrict to those
-        if (h264Levels.length > 0 && h264Levels.length < hlsInstance.levels.length) {
-          console.info('[IPTV] Filtering HEVC levels, using H.264 only for compatibility');
-          // Set level to first H.264 level
-          hlsInstance.currentLevel = h264Levels[0].index;
-        }
-      };
-
-      // First try initial URL (direct or proxied based on custom headers)
-      hls.loadSource(initialUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        // Filter HEVC levels to prevent audio-only playback
-        filterHEVCLevels(hls);
-        markLoaded();
-        video.play().catch(() => {});
-      });
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            tryWithProxy();
-          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            hls.recoverMediaError();
-          } else {
-            tryWithProxy();
-          }
-        }
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS (Safari/iOS)
-      video.src = initialUrl;
-      video.addEventListener('canplay', () => {
-        markLoaded();
-        video.play().catch(() => {});
-      }, { once: true });
-      video.addEventListener('error', () => {
-        // If direct failed, try proxy; if already proxied, fail
-        if (initialUrl === proxiedUrl) {
-          markError('播放错误');
-          return;
-        }
-        video.src = proxiedUrl;
-        video.addEventListener('canplay', () => {
-          markLoaded();
-          video.play().catch(() => {});
-        }, { once: true });
-        video.addEventListener('error', () => {
-          markError('播放错误');
-        }, { once: true });
-      }, { once: true });
-    } else {
-      // Direct video fallback
-      video.src = initialUrl;
-      video.addEventListener('canplay', () => {
-        markLoaded();
-        video.play().catch(() => {});
-      }, { once: true });
-      video.addEventListener('error', () => {
-        if (initialUrl === proxiedUrl) {
-          markError('播放错误，请尝试其他频道');
-          return;
-        }
-        video.src = proxiedUrl;
-        video.addEventListener('canplay', () => {
-          markLoaded();
-          video.play().catch(() => {});
-        }, { once: true });
-        video.addEventListener('error', () => {
-          markError('播放错误，请尝试其他频道');
-        }, { once: true });
-      }, { once: true });
-    }
-  }, [channel.httpUserAgent, channel.httpReferrer]);
-
   // Load on channel/route change
   useEffect(() => {
-    loadChannel(currentUrl);
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = undefined;
-      }
-    };
-  }, [currentUrl, loadChannel]);
+    reload(currentUrl);
+  }, [currentUrl, reload]);
 
   // Reset route index when channel changes
   useEffect(() => {
     setCurrentRouteIndex(0);
     setShowAllRoutes(false);
   }, [channel.name, channel.url]);
-
-  // Playback controls
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) video.play().catch(() => {});
-    else video.pause();
-  };
-
-  const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-  };
-
-  const handleVolumeChange = (value: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.volume = value;
-    if (value > 0 && video.muted) video.muted = false;
-  };
-
-  const progressRef = useRef<HTMLDivElement>(null);
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isLive) return;
-    const video = videoRef.current;
-    const bar = progressRef.current;
-    if (!video || !bar) return;
-    const seekRange = getSeekRange(video);
-    if (!seekRange) return;
-    const rect = bar.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    video.currentTime = seekRange.start + ratio * seekRange.duration;
-  };
 
   const progressPercent = useMemo(() => {
     if (seekWindow) {
@@ -550,7 +200,7 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
               <p className="text-red-400 text-sm mb-3">{error}</p>
               <div className="flex gap-2 flex-wrap justify-center">
                 <button
-                  onClick={(e) => { e.stopPropagation(); loadChannel(currentUrl); }}
+                  onClick={(e) => { e.stopPropagation(); reload(currentUrl); }}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors cursor-pointer"
                 >
                   重试
@@ -584,7 +234,7 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
           currentTime={currentTime}
           progressPercent={progressPercent}
           progressRef={progressRef}
-          onSeek={handleSeek}
+          onSeek={seekTo}
           isPlaying={isPlaying}
           onTogglePlay={togglePlay}
           routes={routes}
@@ -595,7 +245,7 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
           volume={volume}
           isMuted={isMuted}
           onToggleMute={toggleMute}
-          onVolumeChange={handleVolumeChange}
+          onVolumeChange={setVolumeLevel}
           showSidebar={showSidebar}
           onToggleSidebar={() => setShowSidebar(!showSidebar)}
           isFullscreen={isFullscreen}

@@ -20,7 +20,8 @@
   "subtasks": [],
   "children": [
     "07-04-split-iptv-sidebar",
-    "07-05-split-iptv-controls"
+    "07-05-split-iptv-controls",
+    "07-05-extract-iptv-hls-hook"
   ],
   "parent": null,
   "relatedFiles": [],

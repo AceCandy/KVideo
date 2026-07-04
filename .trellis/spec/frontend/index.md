@@ -28,6 +28,7 @@ These guides document how KVideo's frontend actually works. Each guide is ground
 Each guide is sourced from completed tasks under `.trellis/tasks/archive/`:
 
 - Component splits: `split-account-settings`, `split-desktop-more-menu`, `split-episode-list`, `split-iotv-sidebar`, `split-iptv-controls`
+- Hook extraction: `extract-iptv-hls-hook`
 - Atom extraction: `extract-toggle-switch`, `display-component-unify`
 - Store: `store-consolidation`
 - Bundle: `bundle-optimization`

@@ -16,6 +16,7 @@ Hooks live next to their domain: player hooks in `components/player/hooks/`, cro
 |---|---|---|
 | `usePlayerSettings(isPremium)` | `components/player/hooks/` | Subscribes to player settings; returns values + setters |
 | `useHlsPlayer` | `components/player/hooks/` | hls.js lifecycle |
+| `useIptvHls` | `components/iptv/hooks/` | IPTV playback state machine: `loadChannel` + HLS fallback chain + video events + all playback state |
 | `useInfiniteSlice` | `lib/hooks/` | Infinite-scroll slicing (used by `VideoGrid`, `FavoritesGrid`) |
 | `useKeyboardNavigation` | `lib/hooks/` | Arrow-key navigation for lists/grids (used by search lists and `EpisodeSection`) |
 | `useResolutionProbe` | `lib/hooks/` | Probes source resolution |
@@ -55,11 +56,25 @@ Extract when the same stateful logic appears in 2+ places, or when a component m
 
 > Example: `useInfiniteSlice` was extracted because `VideoGrid` and `FavoritesGrid` hand-wrote the same IntersectionObserver pattern.
 
+### Hook scope: give a cross-boundary state a single owner
+
+When a piece of state is written from multiple call sites that would split across a shell/hook boundary (e.g. an HLS loader's reset **and** a video event handler), pick the scope that keeps the state inside one owner. Conservative scope (leave the state in the shell, have the hook reset it via a callback) works when only the hook writes it; **aggressive scope (move every writer into the hook)** is the right call when the shell would otherwise share write access with the hook.
+
+Source: `IPTVPlayer`'s `isLive` is reset by `loadChannel` and continuously updated by the `timeupdate` / `durationchange` handlers. Extracting only `loadChannel` would have forced a shared-write `isLive` (shell + hook). Instead the video event binding moved into `useIptvHls` too, so `isLive` — and the rest of the playback state (`isPlaying` / `currentTime` / `duration` / `seekWindow` / `volume` / `isMuted`) — has a single owner. The shell became a thin orchestrator (UI state + keyboard + fullscreen).
+
+### Refs: shell creates the JSX-attached ones, hook creates its own
+
+`useRef` ownership follows who attaches the ref to a DOM node and who reads it from a closure:
+- The shell creates refs attached to JSX it owns (`videoRef` for the `<video>`, `progressRef` for the seek bar) — these are passed **into** the hook so its closures can read them.
+- The hook creates refs that never touch JSX directly (`hlsRef`, `loadingTimeoutRef`).
+
+Source: `useIptvHls(videoRef, progressRef, channel)` receives the shell's `videoRef` / `progressRef` and owns its own `hlsRef` / `loadingTimeoutRef`.
+
 ---
 
 ## Heavy Dependencies: trust the bundler's default splitting
 
-This project has **zero** `next/dynamic` / `React.lazy`. Heavy runtime deps are imported statically at the top of the file, e.g. `import Hls from 'hls.js'` in `components/player/hooks/useHlsPlayer.ts` and `components/iptv/IPTVPlayer.tsx`.
+This project has **zero** `next/dynamic` / `React.lazy`. Heavy runtime deps are imported statically at the top of the file, e.g. `import Hls from 'hls.js'` in `components/player/hooks/useHlsPlayer.ts` and `components/iptv/hooks/useIptvHls.ts`.
 
 The default webpack/Next.js code-splitting already isolates a heavy dep used only by some pages into its own chunk. Verified in `bundle-optimization`: the player/iptv-only `hls.js` chunk is not loaded by the home page. So a manual `import type` + dynamic `import()` rewrite was rejected as zero-gain (it only delays the player's first frame).
 
