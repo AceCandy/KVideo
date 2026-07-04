@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { VideoCard } from '@/components/search/VideoCard';
 import { FavoritesEmptyState } from './FavoritesEmptyState';
+import { useInfiniteSlice } from '@/lib/hooks/useInfiniteSlice';
 import type { FavoriteItem, Video } from '@/lib/types';
 
 interface FavoritesGridProps {
@@ -15,9 +16,6 @@ export const FavoritesGrid = memo(function FavoritesGrid({
   isPremium = false
 }: FavoritesGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(24);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Convert FavoriteItem to Video format
   const videos: Video[] = useMemo(
@@ -35,32 +33,11 @@ export const FavoritesGrid = memo(function FavoritesGrid({
     [favorites]
   );
 
-  // Setup intersection observer for infinite scroll
-  useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0];
-        if (first.isIntersecting && visibleCount < videos.length) {
-          setVisibleCount((prev) => Math.min(prev + 24, videos.length));
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [visibleCount, videos.length]);
+  const { visibleCount, hasMore, loadMoreRef } = useInfiniteSlice(videos.length, {
+    pageSize: 24,
+    rootMargin: '0px',
+    threshold: 0.1,
+  });
 
   const handleCardClick = useCallback((
     e: React.MouseEvent,
@@ -97,7 +74,7 @@ export const FavoritesGrid = memo(function FavoritesGrid({
       </div>
 
       {/* Load more trigger */}
-      {visibleCount < videos.length && (
+      {hasMore && (
         <div
           ref={loadMoreRef}
           className="h-20 w-full flex items-center justify-center opacity-0 pointer-events-none"

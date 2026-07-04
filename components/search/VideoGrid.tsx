@@ -7,6 +7,7 @@ import { VideoGroupCard, GroupedVideo } from './VideoGroupCard';
 import { settingsStore } from '@/lib/store/settings-store';
 import { Video } from '@/lib/types';
 import { useResolutionProbe } from '@/lib/hooks/useResolutionProbe';
+import { useInfiniteSlice } from '@/lib/hooks/useInfiniteSlice';
 
 interface VideoGridProps {
   videos: Video[];
@@ -22,57 +23,10 @@ export const VideoGrid = memo(function VideoGrid({
   latencies = {}
 }: VideoGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(24);
   const [displayMode, setDisplayMode] = useState<'normal' | 'grouped'>('normal');
   const gridRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  // Load display mode from settings
-  useEffect(() => {
-    const settings = settingsStore.getSettings();
-    setDisplayMode(settings.searchDisplayMode);
-
-    // Initial load: Check for saved scroll position to ensure we render enough items
-    const params = searchParams.toString();
-    const scrollKey = `scroll-pos:${pathname}${params ? '?' + params : ''}`;
-    const savedPos = sessionStorage.getItem(scrollKey);
-
-    if (savedPos && settings.rememberScrollPosition) {
-      const position = parseInt(savedPos, 10);
-      if (!isNaN(position) && position > 500) {
-        // Approximate visible count needed: 
-        // 500 is roughly where the second/third row starts.
-        // Each row is ~300-400px high on most screens. 
-        // 24 items is 4-6 rows.
-        // If scroll is deep, we force a larger initial visible count.
-        // 24, 48, 72, 96...
-        const estimatedRowsNeeded = Math.ceil(position / 300) + 2;
-        // Match CSS breakpoints: sm: 3, md: 4, lg: 5, xl: 6
-        const itemsPerRow = window.innerWidth >= 1280 ? 6 :
-          (window.innerWidth >= 1024 ? 5 :
-            (window.innerWidth >= 768 ? 4 :
-              (window.innerWidth >= 640 ? 3 : 2)));
-        const neededCount = Math.min(videos.length, estimatedRowsNeeded * itemsPerRow);
-
-        if (neededCount > 24) {
-          setVisibleCount(Math.ceil(neededCount / 24) * 24);
-        }
-      }
-    }
-
-    const unsubscribe = settingsStore.subscribe(() => {
-      const newSettings = settingsStore.getSettings();
-      setDisplayMode(newSettings.searchDisplayMode);
-    });
-
-    return () => unsubscribe();
-  }, [pathname, searchParams, videos.length]);
-
-  if (videos.length === 0) {
-    return null;
-  }
 
   // Build stable list of videos to probe for resolution
   const videosToProbe = useMemo(() => {
@@ -98,7 +52,7 @@ export const VideoGrid = memo(function VideoGrid({
     });
 
     return Array.from(groups.entries()).map(([, groupVideos]) => {
-      // Sort by latency (lowest first) 
+      // Sort by latency (lowest first)
       const sorted = [...groupVideos].sort((a, b) => {
         if (a.latency === undefined) return 1;
         if (b.latency === undefined) return -1;
@@ -112,35 +66,6 @@ export const VideoGrid = memo(function VideoGrid({
       };
     });
   }, [videos, displayMode]);
-
-  // Callback ref for the load more trigger
-  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
-    if (observerRef.current) observerRef.current.disconnect();
-
-    if (node) {
-      observerRef.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount(prev => prev + 24);
-        }
-      }, { rootMargin: '400px' });
-
-      observerRef.current.observe(node);
-    }
-  }, []);
-
-  // Memoize the click handler
-  const handleCardClick = useCallback((e: React.MouseEvent, videoId: string, videoUrl: string) => {
-    const isMobile = window.innerWidth < 1024;
-
-    if (isMobile) {
-      if (activeCardId === videoId) {
-        window.location.href = videoUrl;
-      } else {
-        e.preventDefault();
-        setActiveCardId(videoId);
-      }
-    }
-  }, [activeCardId]);
 
   // Normal mode items
   const videoItems = useMemo(() => {
@@ -175,6 +100,73 @@ export const VideoGrid = memo(function VideoGrid({
     }));
   }, [groupedVideos, displayMode]);
 
+  // Total item count drives infinite slice: grouped uses group count, normal uses video count.
+  const totalItems = displayMode === 'grouped' ? groupItems.length : videoItems.length;
+
+  const { visibleCount, hasMore, loadMoreRef, setVisibleCount } = useInfiniteSlice(totalItems, {
+    pageSize: 24,
+    rootMargin: '400px',
+  });
+
+  // Load display mode from settings and restore scroll-based visible count.
+  useEffect(() => {
+    const settings = settingsStore.getSettings();
+    setDisplayMode(settings.searchDisplayMode);
+
+    // Initial load: Check for saved scroll position to ensure we render enough items
+    const params = searchParams.toString();
+    const scrollKey = `scroll-pos:${pathname}${params ? '?' + params : ''}`;
+    const savedPos = sessionStorage.getItem(scrollKey);
+
+    if (savedPos && settings.rememberScrollPosition) {
+      const position = parseInt(savedPos, 10);
+      if (!isNaN(position) && position > 500) {
+        // Approximate visible count needed:
+        // 500 is roughly where the second/third row starts.
+        // Each row is ~300-400px high on most screens.
+        // 24 items is 4-6 rows.
+        // If scroll is deep, we force a larger initial visible count.
+        // 24, 48, 72, 96...
+        const estimatedRowsNeeded = Math.ceil(position / 300) + 2;
+        // Match CSS breakpoints: sm: 3, md: 4, lg: 5, xl: 6
+        const itemsPerRow = window.innerWidth >= 1280 ? 6 :
+          (window.innerWidth >= 1024 ? 5 :
+            (window.innerWidth >= 768 ? 4 :
+              (window.innerWidth >= 640 ? 3 : 2)));
+        const neededCount = Math.min(videos.length, estimatedRowsNeeded * itemsPerRow);
+
+        if (neededCount > 24) {
+          setVisibleCount(Math.ceil(neededCount / 24) * 24);
+        }
+      }
+    }
+
+    const unsubscribe = settingsStore.subscribe(() => {
+      const newSettings = settingsStore.getSettings();
+      setDisplayMode(newSettings.searchDisplayMode);
+    });
+
+    return () => unsubscribe();
+  }, [pathname, searchParams, videos.length, setVisibleCount]);
+
+  if (videos.length === 0) {
+    return null;
+  }
+
+  // Memoize the click handler
+  const handleCardClick = useCallback((e: React.MouseEvent, videoId: string, videoUrl: string) => {
+    const isMobile = window.innerWidth < 1024;
+
+    if (isMobile) {
+      if (activeCardId === videoId) {
+        window.location.href = videoUrl;
+      } else {
+        e.preventDefault();
+        setActiveCardId(videoId);
+      }
+    }
+  }, [activeCardId]);
+
   // Build probe list for grouped mode (probe representative of each group)
   const groupedProbeList = useMemo(() => {
     if (displayMode !== 'grouped') return [];
@@ -184,8 +176,6 @@ export const VideoGrid = memo(function VideoGrid({
   // Probe resolutions
   const probeList = displayMode === 'grouped' ? groupedProbeList : videosToProbe;
   const { resolutions, isProbing } = useResolutionProbe(probeList);
-
-  const totalItems = displayMode === 'grouped' ? groupItems.length : videoItems.length;
 
   return (
     <>
@@ -236,7 +226,7 @@ export const VideoGrid = memo(function VideoGrid({
       </div>
 
       {/* Load more trigger */}
-      {visibleCount < totalItems && (
+      {hasMore && (
         <div
           ref={loadMoreRef}
           className="h-20 w-full flex items-center justify-center opacity-0 pointer-events-none"
