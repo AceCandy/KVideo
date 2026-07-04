@@ -1,59 +1,101 @@
 # Component Guidelines
 
-> How components are built in this project.
+> How components are split, bounded, and contracted — based on actual refactors.
 
 ---
 
 ## Overview
 
-<!--
-Document your project's component conventions here.
-
-Questions to answer:
-- What component patterns do you use?
-- How are props defined?
-- How do you handle composition?
-- What accessibility standards apply?
--->
-
-(To be filled by the team)
+Several large components have been split: `AccountSettings` (713 lines), `DesktopMoreMenu`, `EpisodeList` (657 lines). The patterns below come from those tasks.
 
 ---
 
-## Component Structure
+## Split Patterns
 
-<!-- Standard structure of a component file -->
+### Pattern A — Partition Extraction (symmetric)
 
-(To be filled by the team)
+Use when each region owns its refs / state / effects cleanly (e.g. `EpisodeList`).
+
+- Each region's refs / state / effects **sink together** into the owning subcomponent.
+- **No `forwardRef` / `useImperativeHandle`** — refs stay self-contained in their region.
+- The shell only composes.
+
+> Example: `EpisodeList` became a 52-line shell plus `episode-list/SourcePanel.tsx`, `episode-list/EpisodeSection.tsx`, `episode-list/SourceRow.tsx`, `episode-list/types.ts`. `listRef` / `buttonRefs` sank into `EpisodeSection`; `sourceItemRefs` sank into `SourcePanel`.
+
+### Pattern B — Mixed Strategy (asymmetric)
+
+Use when the shell has an unsplittable coupling (effect dependency chain).
+
+- Unsplittable effects / fetches stay in the shell.
+- Independent pure-UI state sinks as a whole.
+- Presentational children: state stays in the shell, passed via props.
+
+> Example: In `AccountSettings`, `fetchAccounts` is consumed by two effects and writes several states — it **cannot be split**, so Managed draft state stayed in the shell. Legacy state is fully independent and sank into `LegacyAccountsPanel`.
+
+### Signs the shell cannot sink
+
+- A ref is used by positioning math or as a portal target (`DesktopMoreMenu`'s `buttonRef` / `menuRef`).
+- An effect dependency chain spans multiple states (`AccountSettings`' `fetchAccounts`).
+- A `createPortal` target depends on `containerRef.current`.
 
 ---
 
-## Props Conventions
+## Presentational vs Self-Contained
 
-<!-- How props should be defined and typed -->
+| Type | State | Example |
+|---|---|---|
+| Presentational | Stays in shell, passed via props | `SessionCard`, `LoginModeBanner`, `ManagedAccountsList` |
+| Self-contained | Sinks into the child | `LegacyAccountsPanel`, `SourcePanel` (latency state) |
 
-(To be filled by the team)
-
----
-
-## Styling Patterns
-
-<!-- How styles are applied (CSS modules, styled-components, Tailwind, etc.) -->
-
-(To be filled by the team)
+Rule: is the state independent of the shell's fetch / effects? Independent -> sink; coupled -> keep in shell.
 
 ---
 
-## Accessibility
+## Local Component vs Global UI Atom Boundary
 
-<!-- A11y requirements and patterns -->
+**Do not force-unify components with different visuals or usage.**
 
-(To be filled by the team)
+> Example: `components/ui/Switch.tsx` (settings pages; checkbox + peer; 50x30; no glow) and `components/player/desktop/more-menu/ToggleSwitch.tsx` (player overlay menu; button + role=switch + glow; 40x24) **coexist on purpose**. Their visuals, DOM semantics, and usage scope all differ; merging would regress one side.
+
+Checklist before merging two similar components:
+- Same visuals (size / shadow / radius)?
+- Same DOM semantics (checkbox vs button+role)?
+- Same usage scope (global vs one subtree)?
+
+Any "no" -> keep it local in its subdirectory; do not promote to `ui/`.
+
+---
+
+## Controlled Contract
+
+Toggles / selectors are controlled:
+
+```ts
+interface ToggleSwitchProps {
+  checked: boolean;
+  onChange: () => void;
+  isRotated: boolean;
+  disabled?: boolean;
+}
+```
+
+The parent owns the state; the component holds none. When `disabled`, rely on the native button `disabled` to block clicks — no JS guard.
+
+---
+
+## Forbidden Patterns
+
+| Pattern | Reason |
+|---|---|
+| `forwardRef` only to sink a ref | Partition sinks refs without it |
+| Shell forwarding 13+ props | Let each child call the store/hook itself (see hook-guidelines) |
+| Force-unifying visually different siblings | Regression risk |
+| Extracting a whole row when only the toggle repeats | Extract only the truly duplicated part |
 
 ---
 
 ## Common Mistakes
 
-<!-- Component-related mistakes your team has made -->
-
-(To be filled by the team)
+- Splitting an unsplittable effect chain.
+- Using `visibleSources.indexOf` instead of a global index (slice offset bug).
+- Extracting a row component and piling up `children` / props (violates simplicity).

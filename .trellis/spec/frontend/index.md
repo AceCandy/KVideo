@@ -1,12 +1,12 @@
 # Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
+> Concrete conventions for this project, distilled from completed refactor tasks.
 
 ---
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+These guides document how KVideo's frontend actually works. Each guide is grounded in real files and past tasks, not an ideal template. Read the one relevant to your change.
 
 ---
 
@@ -14,26 +14,26 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | Module layout, shell + subdirectory pattern, `ui/` boundary | Filled |
+| [Component Guidelines](./component-guidelines.md) | Split patterns, presentational vs self-contained, controlled contract | Filled |
+| [Hook Guidelines](./hook-guidelines.md) | Store subscription, hook extraction, lazy heavy deps | Filled |
+| [State Management](./state-management.md) | Zustand stores, ref ownership, effect dependency chains | Filled |
+| [Quality Guidelines](./quality-guidelines.md) | Language rules, surgical changes, zero visual regression, Trellis flow | Filled |
+| [Type Safety](./type-safety.md) | Type organization, `Pick` slicing, re-export shims | Filled |
 
 ---
 
-## How to Fill These Guidelines
+## How These Were Filled
 
-For each guideline file:
+Each guide is sourced from completed tasks under `.trellis/tasks/archive/`:
 
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
+- Component splits: `split-account-settings`, `split-desktop-more-menu`, `split-episode-list`
+- Atom extraction: `extract-toggle-switch`, `display-component-unify`
+- Store: `store-consolidation`
+- Bundle: `bundle-optimization`
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+When you complete a refactor, distill new conventions back here (Trellis `trellis-update-spec` step).
 
 ---
 
-**Language**: All documentation should be written in **English**.
+**Language**: All documentation is written in **English**.
