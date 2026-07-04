@@ -37,7 +37,10 @@ export async function getInsecureDispatcher(): Promise<unknown> {
   if (insecureDispatcherInitialized) return cachedInsecureDispatcher;
   insecureDispatcherInitialized = true;
   try {
-    const mod = await import('undici');
+    // webpackIgnore: 让 webpack 不把 undici 打进 bundle（否则 edge 构建会因
+    // stream/net/http 等 Node 内置模块失败）。运行时由 Node 原生解析；
+    // Edge 运行时 import 会抛，被 catch 吞掉 → 豁免降级为不生效（符合 docs）。
+    const mod = await import(/* webpackIgnore: true */ 'undici');
     cachedInsecureDispatcher = new mod.Agent({
       connect: { rejectUnauthorized: false },
     });

@@ -97,7 +97,9 @@ export class SsrfGuardError extends Error {
  * 解析失败时降级放行，交由 fetch 自然失败（避免 DNS 抖动误伤合法源）。
  */
 async function assertPublicResolvable(host: string): Promise<void> {
-    const dns = await import('node:dns/promises').catch(() => null);
+    // webpackIgnore: 让 webpack 不把 node:dns 打进 bundle（edge 构建不支持 node: scheme）。
+    // 运行时由 Node 原生解析；Edge 平台 import 会抛 → 降级为字面量校验。
+    const dns = await import(/* webpackIgnore: true */ 'node:dns/promises').catch(() => null);
     if (!dns) return; // node:dns 不可用（部分 edge 平台），降级为字面量校验
     let entries: { address: string; family: number }[];
     try {
