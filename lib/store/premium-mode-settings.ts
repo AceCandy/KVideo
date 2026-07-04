@@ -2,6 +2,7 @@
  * Premium Mode Settings Store
  * Stores player/display settings separately for premium mode.
  * Mirrors the relevant subset of AppSettings but uses its own localStorage key.
+ * 内部读写与订阅原语复用 settings-helpers，避免与其他手写单例 store 重复样板。
  */
 
 import {
@@ -12,6 +13,7 @@ import {
   DEFAULT_SEEK_STEP_SECONDS,
   normalizeSeekStepSeconds,
 } from './settings-store';
+import { createListenerSet, readJson, writeJson } from './settings-helpers';
 
 const PREMIUM_MODE_SETTINGS_KEY = 'kvideo-premium-mode-settings';
 
@@ -65,65 +67,45 @@ function getDefaultModeSettings(): ModeSettings {
   };
 }
 
+const listenerSet = createListenerSet();
+
 export const premiumModeSettingsStore = {
   getSettings(): ModeSettings {
-    if (typeof window === 'undefined') {
+    const parsed = readJson<Partial<ModeSettings> | null>(PREMIUM_MODE_SETTINGS_KEY, null);
+    if (!parsed) {
       return getDefaultModeSettings();
     }
 
-    const stored = localStorage.getItem(PREMIUM_MODE_SETTINGS_KEY);
-    if (!stored) {
-      return getDefaultModeSettings();
-    }
-
-    try {
-      const parsed = JSON.parse(stored);
-      return {
-        sortBy: parsed.sortBy || 'default',
-        autoNextEpisode: parsed.autoNextEpisode !== undefined ? parsed.autoNextEpisode : true,
-        autoSkipIntro: parsed.autoSkipIntro !== undefined ? parsed.autoSkipIntro : false,
-        skipIntroSeconds: typeof parsed.skipIntroSeconds === 'number' ? parsed.skipIntroSeconds : 0,
-        autoSkipOutro: parsed.autoSkipOutro !== undefined ? parsed.autoSkipOutro : false,
-        skipOutroSeconds: typeof parsed.skipOutroSeconds === 'number' ? parsed.skipOutroSeconds : 0,
-        seekStepSeconds: normalizeSeekStepSeconds(parsed.seekStepSeconds),
-        showModeIndicator: parsed.showModeIndicator !== undefined ? parsed.showModeIndicator : false,
-        adFilterMode: parsed.adFilterMode || 'heuristic',
-        fullscreenType: (parsed.fullscreenType === 'window' || parsed.fullscreenType === 'native' || parsed.fullscreenType === 'auto') ? parsed.fullscreenType : 'auto',
-        proxyMode: (parsed.proxyMode === 'retry' || parsed.proxyMode === 'none' || parsed.proxyMode === 'always') ? parsed.proxyMode : 'retry',
-        realtimeLatency: parsed.realtimeLatency !== undefined ? parsed.realtimeLatency : false,
-        searchDisplayMode: parsed.searchDisplayMode === 'grouped' ? 'grouped' : 'normal',
-        episodeReverseOrder: parsed.episodeReverseOrder !== undefined ? parsed.episodeReverseOrder : false,
-        rememberScrollPosition: parsed.rememberScrollPosition !== undefined ? parsed.rememberScrollPosition : true,
-        personalizedRecommendations: parsed.personalizedRecommendations !== undefined ? parsed.personalizedRecommendations : true,
-        danmakuEnabled: parsed.danmakuEnabled !== undefined ? parsed.danmakuEnabled : false,
-        danmakuApiUrl: typeof parsed.danmakuApiUrl === 'string' ? (parsed.danmakuApiUrl || process.env.NEXT_PUBLIC_DANMAKU_API_URL || '') : (process.env.NEXT_PUBLIC_DANMAKU_API_URL || ''),
-        danmakuOpacity: typeof parsed.danmakuOpacity === 'number' ? parsed.danmakuOpacity : 0.7,
-        danmakuFontSize: typeof parsed.danmakuFontSize === 'number' ? parsed.danmakuFontSize : 20,
-        danmakuDisplayArea: typeof parsed.danmakuDisplayArea === 'number' ? parsed.danmakuDisplayArea : 0.5,
-      };
-    } catch {
-      return getDefaultModeSettings();
-    }
-  },
-
-  listeners: new Set<() => void>(),
-
-  subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
+    return {
+      sortBy: parsed.sortBy || 'default',
+      autoNextEpisode: parsed.autoNextEpisode !== undefined ? parsed.autoNextEpisode : true,
+      autoSkipIntro: parsed.autoSkipIntro !== undefined ? parsed.autoSkipIntro : false,
+      skipIntroSeconds: typeof parsed.skipIntroSeconds === 'number' ? parsed.skipIntroSeconds : 0,
+      autoSkipOutro: parsed.autoSkipOutro !== undefined ? parsed.autoSkipOutro : false,
+      skipOutroSeconds: typeof parsed.skipOutroSeconds === 'number' ? parsed.skipOutroSeconds : 0,
+      seekStepSeconds: normalizeSeekStepSeconds(parsed.seekStepSeconds),
+      showModeIndicator: parsed.showModeIndicator !== undefined ? parsed.showModeIndicator : false,
+      adFilterMode: parsed.adFilterMode || 'heuristic',
+      fullscreenType: (parsed.fullscreenType === 'window' || parsed.fullscreenType === 'native' || parsed.fullscreenType === 'auto') ? parsed.fullscreenType : 'auto',
+      proxyMode: (parsed.proxyMode === 'retry' || parsed.proxyMode === 'none' || parsed.proxyMode === 'always') ? parsed.proxyMode : 'retry',
+      realtimeLatency: parsed.realtimeLatency !== undefined ? parsed.realtimeLatency : false,
+      searchDisplayMode: parsed.searchDisplayMode === 'grouped' ? 'grouped' : 'normal',
+      episodeReverseOrder: parsed.episodeReverseOrder !== undefined ? parsed.episodeReverseOrder : false,
+      rememberScrollPosition: parsed.rememberScrollPosition !== undefined ? parsed.rememberScrollPosition : true,
+      personalizedRecommendations: parsed.personalizedRecommendations !== undefined ? parsed.personalizedRecommendations : true,
+      danmakuEnabled: parsed.danmakuEnabled !== undefined ? parsed.danmakuEnabled : false,
+      danmakuApiUrl: typeof parsed.danmakuApiUrl === 'string' ? (parsed.danmakuApiUrl || process.env.NEXT_PUBLIC_DANMAKU_API_URL || '') : (process.env.NEXT_PUBLIC_DANMAKU_API_URL || ''),
+      danmakuOpacity: typeof parsed.danmakuOpacity === 'number' ? parsed.danmakuOpacity : 0.7,
+      danmakuFontSize: typeof parsed.danmakuFontSize === 'number' ? parsed.danmakuFontSize : 20,
+      danmakuDisplayArea: typeof parsed.danmakuDisplayArea === 'number' ? parsed.danmakuDisplayArea : 0.5,
     };
   },
 
-  notifyListeners(): void {
-    this.listeners.forEach((listener) => listener());
-  },
+  subscribe: listenerSet.subscribe,
 
   saveSettings(settings: ModeSettings): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(PREMIUM_MODE_SETTINGS_KEY, JSON.stringify(settings));
-      this.notifyListeners();
-    }
+    writeJson(PREMIUM_MODE_SETTINGS_KEY, settings);
+    listenerSet.notifyListeners();
   },
 };
 
