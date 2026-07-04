@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-04-split-iptv-sidebar"
+    "07-04-split-iptv-sidebar",
+    "07-05-split-iptv-controls"
   ],
   "parent": null,
   "relatedFiles": [],

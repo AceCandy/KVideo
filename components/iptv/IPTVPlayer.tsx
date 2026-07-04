@@ -9,11 +9,12 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
-import { Icons } from '@/components/ui/Icon';
 import type { M3UChannel } from '@/lib/utils/m3u-parser';
 import type { IPTVSource } from '@/lib/store/iptv-store';
 import { settingsStore, DEFAULT_SEEK_STEP_SECONDS } from '@/lib/store/settings-store';
 import { ChannelSidebar } from './iptv-sidebar/ChannelSidebar';
+import { TopBar } from './iptv-controls/TopBar';
+import { BottomControls } from './iptv-controls/BottomControls';
 
 const HLS_LIVE_CONFIG: Partial<Hls['config']> = {
   enableWorker: true,
@@ -28,7 +29,6 @@ const HLS_LIVE_CONFIG: Partial<Hls['config']> = {
 };
 
 const LOADING_TIMEOUT_MS = 30000;
-const MAX_VISIBLE_ROUTES = 3;
 
 interface IPTVPlayerProps {
   channel: M3UChannel;
@@ -45,15 +45,6 @@ function getProxiedUrl(url: string, ua?: string, referer?: string): string {
   if (referer) proxyUrl += `referer=${encodeURIComponent(referer)}&`;
   proxyUrl += `url=${encodeURIComponent(url)}`;
   return proxyUrl;
-}
-
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return '0:00';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function getSeekRange(video: HTMLVideoElement): { start: number; end: number; duration: number } | null {
@@ -90,7 +81,6 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
   const [seekWindow, setSeekWindow] = useState<{ start: number; end: number; duration: number } | null>(null);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [currentRouteIndex, setCurrentRouteIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAllRoutes, setShowAllRoutes] = useState(false);
@@ -99,10 +89,6 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
   // Get current route URL
   const routes = channel.routes || [channel.url];
   const currentUrl = routes[currentRouteIndex] || channel.url;
-
-  // Route display - collapse if > MAX_VISIBLE_ROUTES
-  const visibleRoutes = showAllRoutes ? routes : routes.slice(0, MAX_VISIBLE_ROUTES);
-  const hasMoreRoutes = routes.length > MAX_VISIBLE_ROUTES;
 
   useEffect(() => {
     const syncSeekStep = () => {
@@ -527,8 +513,6 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
-  const VolumeIcon = isMuted || volume === 0 ? Icons.VolumeX : volume < 0.5 ? Icons.Volume1 : Icons.Volume2;
-
   return (
     <div
       ref={containerRef}
@@ -584,146 +568,39 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
           </div>
         )}
 
-        {/* Top Bar */}
-        <div
-          data-controls
-          className={`absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isLive && (
-                <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  LIVE
-                </span>
-              )}
-              <span className="text-white text-sm font-medium drop-shadow-lg">{channel.name}</span>
-              {routes.length > 1 && (
-                <span className="text-white/50 text-xs">线路 {currentRouteIndex + 1}/{routes.length}</span>
-              )}
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); onClose(); }}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors cursor-pointer"
-            >
-              <Icons.X size={18} />
-            </button>
-          </div>
-        </div>
+        <TopBar
+          showControls={showControls}
+          isLive={isLive}
+          channelName={channel.name}
+          routeIndex={currentRouteIndex}
+          routeCount={routes.length}
+          onClose={onClose}
+        />
 
-        {/* Bottom Controls */}
-        <div
-          data-controls
-          className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        >
-          {/* Progress Bar (non-live only) */}
-          {!isLive && duration > 0 && (
-            <div className="px-4 pt-2">
-              <div
-                ref={progressRef}
-                className="group h-1 hover:h-2 bg-white/20 rounded-full cursor-pointer transition-all relative"
-                onClick={(e) => { e.stopPropagation(); handleSeek(e); }}
-              >
-                <div
-                  className="h-full bg-[var(--accent-color)] rounded-full relative pointer-events-none"
-                  style={{ width: `${progressPercent}%` }}
-                >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 px-4 py-3">
-            {/* Play/Pause */}
-            <button
-              onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-            >
-              {isPlaying ? <Icons.Pause size={20} /> : <Icons.Play size={20} />}
-            </button>
-
-            {/* Time Display */}
-            {!isLive && duration > 0 && (
-              <span className="text-white/70 text-xs tabular-nums">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            )}
-
-            <div className="flex-1" />
-
-            {/* Route Selector - collapsed */}
-            {routes.length > 1 && (
-              <div className="flex gap-1 items-center" data-controls>
-                {visibleRoutes.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => { e.stopPropagation(); setCurrentRouteIndex(i); }}
-                    className={`px-2 py-0.5 text-[10px] rounded transition-colors cursor-pointer ${
-                      i === currentRouteIndex
-                        ? 'bg-[var(--accent-color)] text-white'
-                        : 'bg-white/10 text-white/60 hover:bg-white/20'
-                    }`}
-                  >
-                    线路{i + 1}
-                  </button>
-                ))}
-                {hasMoreRoutes && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowAllRoutes(!showAllRoutes); }}
-                    className="px-2 py-0.5 text-[10px] rounded bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60 transition-colors cursor-pointer"
-                  >
-                    {showAllRoutes ? '收起' : `+${routes.length - MAX_VISIBLE_ROUTES}`}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Volume */}
-            <div
-              className="relative flex items-center"
-              onMouseEnter={() => setShowVolumeSlider(true)}
-              onMouseLeave={() => setShowVolumeSlider(false)}
-            >
-              <button
-                onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-              >
-                <VolumeIcon size={18} />
-              </button>
-              {showVolumeSlider && (
-                <div className="ml-1 w-20 flex items-center" data-controls>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => { e.stopPropagation(); handleVolumeChange(parseFloat(e.target.value)); }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full h-1 accent-white cursor-pointer"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Channel List */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowSidebar(!showSidebar); }}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-            >
-              <Icons.List size={18} />
-            </button>
-
-            {/* Fullscreen */}
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-            >
-              {isFullscreen ? <Icons.Minimize size={18} /> : <Icons.Maximize size={18} />}
-            </button>
-          </div>
-        </div>
+        <BottomControls
+          showControls={showControls}
+          isLive={isLive}
+          duration={duration}
+          currentTime={currentTime}
+          progressPercent={progressPercent}
+          progressRef={progressRef}
+          onSeek={handleSeek}
+          isPlaying={isPlaying}
+          onTogglePlay={togglePlay}
+          routes={routes}
+          currentRouteIndex={currentRouteIndex}
+          onRouteChange={setCurrentRouteIndex}
+          showAllRoutes={showAllRoutes}
+          onToggleShowAllRoutes={() => setShowAllRoutes(!showAllRoutes)}
+          volume={volume}
+          isMuted={isMuted}
+          onToggleMute={toggleMute}
+          onVolumeChange={handleVolumeChange}
+          showSidebar={showSidebar}
+          onToggleSidebar={() => setShowSidebar(!showSidebar)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
       </div>
 
       {/* Sidebar */}

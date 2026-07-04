@@ -30,8 +30,10 @@ Use when the shell has an unsplittable coupling (effect dependency chain).
 - Unsplittable effects / fetches stay in the shell.
 - Independent pure-UI state sinks as a whole.
 - Presentational children: state stays in the shell, passed via props.
+- **A state can sink into a presentational child when no effect / keyboard / fetch handler writes it — only that child's own DOM events do.** Cross-boundary state (written by effects or global handlers) stays in the shell and is passed via props. Source: in `IPTVPlayer`'s `BottomControls`, `showVolumeSlider` (driven only by the volume wrapper's `onMouseEnter` / `onMouseLeave`) sank into the child, while `showAllRoutes` (written by the shell's route-reset effect) stayed in the shell as a prop.
+- **Forward a ref through props when a shell closure needs it.** The shell creates the ref (its handler reads `ref.current`), passes the ref object as a normal prop, and the presentational child attaches it to its node — no `forwardRef` / `useImperativeHandle`. Source: `progressRef` is created in `IPTVPlayer` (the `handleSeek` closure reads its bounding box) and forwarded to `BottomControls`, which attaches it to the seek bar.
 
-> Example: In `AccountSettings`, `fetchAccounts` is consumed by two effects and writes several states — it **cannot be split**, so Managed draft state stayed in the shell. Legacy state is fully independent and sank into `LegacyAccountsPanel`.
+> Example: In `AccountSettings`, `fetchAccounts` is consumed by two effects and writes several states — it **cannot be split**, so Managed draft state stayed in the shell. Legacy state is fully independent and sank into `LegacyAccountsPanel`. In `IPTVPlayer`'s controls split, `TopBar` + `BottomControls` are presentational — all playback state and `progressRef` stay in the shell, with only the local volume-hover state sinking.
 
 ### Signs the shell cannot sink
 
