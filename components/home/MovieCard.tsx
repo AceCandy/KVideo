@@ -4,10 +4,8 @@
  */
 
 import { memo, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icon';
+import { PosterCard } from '@/components/ui/PosterCard';
 
 interface DoubanMovie {
   id: string;
@@ -27,7 +25,7 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
   const [fallbackError, setFallbackError] = useState(false);
 
   return (
-    <Link
+    <PosterCard
       href={`/?q=${encodeURIComponent(movie.title)}`}
       onClick={(e) => {
         // Allow default behavior for modifier keys (new tab, etc.)
@@ -36,45 +34,28 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
         e.preventDefault();
         onMovieClick(movie);
       }}
-      data-focusable
-      className="group cursor-pointer hover:translate-y-[-2px] transition-transform duration-200 ease-out"
-      style={{
-        position: 'relative',
-        zIndex: 1,
-        contentVisibility: 'auto'
+      cardStyle={{ contentVisibility: 'auto' }}
+      cardInnerClassName="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[0_8px_24px_var(--shadow-color)] transition-shadow duration-200 ease-out"
+      posterClassName="bg-[var(--glass-bg)]"
+      image={!imageError ? movie.cover : !fallbackError ? '/placeholder-poster.svg' : undefined}
+      imageAlt={movie.title}
+      imageSizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+      imageClassName={!imageError ? 'object-cover transition-transform duration-300 group-hover:scale-105' : 'object-cover'}
+      onImageError={() => {
+        if (!imageError) {
+          setImageError(true);
+        } else if (!fallbackError) {
+          setFallbackError(true);
+        }
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.zIndex = '100')}
-      onMouseLeave={(e) => (e.currentTarget.style.zIndex = '1')}
-    >
-      <Card hover={false} className="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[0_8px_24px_var(--shadow-color)] transition-shadow duration-200 ease-out" blur={false}>
-        <div className="relative aspect-[2/3] bg-[var(--glass-bg)] rounded-[var(--radius-2xl)]">
-          {!imageError ? (
-            <Image
-              src={movie.cover}
-              alt={movie.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105 rounded-[var(--radius-2xl)]"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-              loading="eager"
-              unoptimized
-              referrerPolicy="no-referrer"
-              onError={() => setImageError(true)}
-            />
-          ) : !fallbackError ? (
-            <Image
-              src="/placeholder-poster.svg"
-              alt={movie.title}
-              fill
-              className="object-cover rounded-[var(--radius-2xl)]"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-              unoptimized
-              onError={() => setFallbackError(true)}
-            />
-          ) : (
+      posterChildren={
+        <>
+          {/* 主图与兜底图全部失败时的文字占位 */}
+          {imageError && fallbackError ? (
             <div className="w-full h-full flex items-center justify-center bg-[var(--glass-bg)] rounded-[var(--radius-2xl)]">
               <p className="text-sm text-[var(--text-muted)]">暂无图片</p>
             </div>
-          )}
+          ) : null}
           {movie.rate && parseFloat(movie.rate) > 0 && (
             <div
               onClick={(e) => {
@@ -91,13 +72,14 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
               </span>
             </div>
           )}
-        </div>
-        <div className="pt-3">
-          <h3 className="font-semibold text-sm text-center text-[var(--text-color)] line-clamp-2 group-hover:text-[var(--accent-color)] transition-colors">
-            {movie.title}
-          </h3>
-        </div>
-      </Card>
-    </Link>
+        </>
+      }
+      footerClassName="pt-3"
+      footer={
+        <h3 className="font-semibold text-sm text-center text-[var(--text-color)] line-clamp-2 group-hover:text-[var(--accent-color)] transition-colors">
+          {movie.title}
+        </h3>
+      }
+    />
   );
 });
