@@ -19,6 +19,7 @@ Use when each region owns its refs / state / effects cleanly (e.g. `EpisodeList`
 - Each region's refs / state / effects **sink together** into the owning subcomponent.
 - **No `forwardRef` / `useImperativeHandle`** — refs stay self-contained in their region.
 - The shell only composes.
+- **Visibility-gated mount simplifies effect deps.** When the sunk component mounts only while a shell flag is true, its effects can drop that flag from their deps: the mount run replaces the flag's false->true trigger, and the remaining deps cover in-open changes. Source: `IPTVPlayer`'s sidebar auto-scroll effect went from deps `[showSidebar, channel.url]` to `[channel.url]` after sinking into `ChannelSidebar` (mounted via `{showSidebar && <ChannelSidebar/>}`) — both original trigger branches preserved.
 
 > Example: `EpisodeList` became a 52-line shell plus `episode-list/SourcePanel.tsx`, `episode-list/EpisodeSection.tsx`, `episode-list/SourceRow.tsx`, `episode-list/types.ts`. `listRef` / `buttonRefs` sank into `EpisodeSection`; `sourceItemRefs` sank into `SourcePanel`.
 

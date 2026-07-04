@@ -24,6 +24,7 @@ components/
   settings/               Settings pages
     account/              AccountSettings subcomponents + shared types/utils
   iptv/                   IPTV feature
+    iptv-sidebar/         ChannelSidebar subcomponent
 lib/
   store/                  Zustand stores + localStorage primitives
   player/                 Player-domain utilities (source-list-utils, resolution-cache)
@@ -60,6 +61,12 @@ components/settings/
     LegacyAccountsPanel.tsx
     types.ts
     utils.ts
+
+components/iptv/
+  IPTVPlayer.tsx                  # shell
+  iptv-sidebar/
+    ChannelSidebar.tsx            # self-contained sidebar (6-prop contract)
+    types.ts
 ```
 
 Why:
@@ -100,4 +107,4 @@ This keeps the public surface of the shell unchanged.
 
 ## Examples
 
-Well-organized subtrees: `components/player/episode-list/`, `components/player/desktop/more-menu/`, `components/settings/account/`.
+Well-organized subtrees: `components/player/episode-list/`, `components/player/desktop/more-menu/`, `components/settings/account/`, `components/iptv/iptv-sidebar/`.

@@ -1,0 +1,28 @@
+{
+  "id": "converge-iptv-player",
+  "name": "converge-iptv-player",
+  "title": "Converge IPTVPlayer into shell + subcomponents + HLS hook",
+  "description": "Parent: split 1062-line IPTVPlayer into shell + ChannelSidebar + controls + HLS hook, in three ordered child tasks",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "AceCandy",
+  "assignee": "AceCandy",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-04-split-iptv-sidebar"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
