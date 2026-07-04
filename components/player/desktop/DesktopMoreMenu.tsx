@@ -7,6 +7,7 @@ import { usePlayerSettings } from '../hooks/usePlayerSettings';
 import { createPortal } from 'react-dom';
 import { AdFilterGroup } from './more-menu/AdFilterGroup';
 import { DanmakuGroup } from './more-menu/DanmakuGroup';
+import { ToggleSwitch } from './more-menu/ToggleSwitch';
 
 interface DesktopMoreMenuProps {
     showMoreMenu: boolean;
@@ -358,20 +359,11 @@ export function DesktopMoreMenu({
                     <Icons.Zap size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                     <span>模式指示器</span>
                 </div>
-                <button
-                    onClick={() => setShowModeIndicator(!showModeIndicator)}
-                    className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${showModeIndicator
-                        ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
-                        : 'bg-white/5 hover:bg-white/10'
-                        } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
-                    aria-checked={showModeIndicator}
-                    role="switch"
-                >
-                    <span
-                        className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${showModeIndicator ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
-                            }`}
-                    />
-                </button>
+                <ToggleSwitch
+                    checked={showModeIndicator}
+                    onChange={() => setShowModeIndicator(!showModeIndicator)}
+                    isRotated={isRotated}
+                />
             </div>
 
             {/* Ad Filter Mode Selector */}
@@ -389,20 +381,11 @@ export function DesktopMoreMenu({
                     <Icons.SkipForward size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                     <span>自动下一集</span>
                 </div>
-                <button
-                    onClick={() => setAutoNextEpisode(!autoNextEpisode)}
-                    className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoNextEpisode
-                        ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
-                        : 'bg-white/5 hover:bg-white/10'
-                        } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
-                    aria-checked={autoNextEpisode}
-                    role="switch"
-                >
-                    <span
-                        className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoNextEpisode ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
-                            }`}
-                    />
-                </button>
+                <ToggleSwitch
+                    checked={autoNextEpisode}
+                    onChange={() => setAutoNextEpisode(!autoNextEpisode)}
+                    isRotated={isRotated}
+                />
             </div>
 
             {/* Skip Intro Switch */}
@@ -412,20 +395,11 @@ export function DesktopMoreMenu({
                         <Icons.FastForward size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>跳过片头</span>
                     </div>
-                    <button
-                        onClick={() => setAutoSkipIntro(!autoSkipIntro)}
-                        className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipIntro
-                            ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
-                            : 'bg-white/5 hover:bg-white/10'
-                            } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
-                        aria-checked={autoSkipIntro}
-                        role="switch"
-                    >
-                        <span
-                            className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoSkipIntro ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
-                                }`}
-                        />
-                    </button>
+                    <ToggleSwitch
+                        checked={autoSkipIntro}
+                        onChange={() => setAutoSkipIntro(!autoSkipIntro)}
+                        isRotated={isRotated}
+                    />
                 </div>
                 {/* Expandable Input */}
                 {autoSkipIntro && (
@@ -452,20 +426,11 @@ export function DesktopMoreMenu({
                         <Icons.Rewind size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>跳过片尾</span>
                     </div>
-                    <button
-                        onClick={() => setAutoSkipOutro(!autoSkipOutro)}
-                        className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipOutro
-                            ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
-                            : 'bg-white/5 hover:bg-white/10'
-                            } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
-                        aria-checked={autoSkipOutro}
-                        role="switch"
-                    >
-                        <span
-                            className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoSkipOutro ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
-                                }`}
-                        />
-                    </button>
+                    <ToggleSwitch
+                        checked={autoSkipOutro}
+                        onChange={() => setAutoSkipOutro(!autoSkipOutro)}
+                        isRotated={isRotated}
+                    />
                 </div>
                 {/* Expandable Input */}
                 {autoSkipOutro && (
