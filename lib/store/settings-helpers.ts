@@ -89,3 +89,42 @@ export function importSettings(
         return false;
     }
 }
+
+type Listener = () => void;
+
+/**
+ * 订阅集合原语：手写单例对象 store 共用的 listeners 三件套。
+ * subscribe 返回 unsubscribe；notifyListeners 通知全部监听者。
+ */
+export function createListenerSet() {
+    const listeners = new Set<Listener>();
+    return {
+        subscribe(fn: Listener): () => void {
+            listeners.add(fn);
+            return () => {
+                listeners.delete(fn);
+            };
+        },
+        notifyListeners(): void {
+            listeners.forEach((l) => l());
+        },
+    };
+}
+
+/** SSR 安全读 localStorage JSON；非浏览器或读取/解析失败返回 fallback */
+export function readJson<T>(key: string, fallback: T): T {
+    if (typeof window === 'undefined') return fallback;
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw) as T;
+    } catch {
+        return fallback;
+    }
+}
+
+/** SSR 安全写 localStorage JSON；非浏览器环境无操作 */
+export function writeJson(key: string, value: unknown): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(key, JSON.stringify(value));
+}
