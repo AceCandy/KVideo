@@ -72,7 +72,15 @@ export interface AppSettings {
   blockedCategories: string[]; // Category keywords to hide from search results (e.g. '伦理')
 }
 
-import { exportSettings, importSettings, SEARCH_HISTORY_KEY, WATCH_HISTORY_KEY } from './settings-helpers';
+import {
+  exportSettings,
+  importSettings,
+  SEARCH_HISTORY_KEY,
+  WATCH_HISTORY_KEY,
+  createListenerSet,
+  readJson,
+  writeJson,
+} from './settings-helpers';
 
 const SETTINGS_KEY = 'kvideo-settings';
 
@@ -173,21 +181,16 @@ export function hasStoredAppSetting(key: keyof AppSettings): boolean {
   }
 }
 
+const listenerSet = createListenerSet();
+
 export const settingsStore = {
   getSettings(): AppSettings {
-    // SSR: Return defaults
-    if (typeof window === 'undefined') {
-      return getDefaultAppSettings();
-    }
-
-    // Client: No stored settings, return defaults
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (!stored) {
+    const parsed = readJson<any | null>(SETTINGS_KEY, null);
+    if (!parsed) {
       return getDefaultAppSettings();
     }
 
     try {
-      const parsed = JSON.parse(stored);
       // Get ENV subscriptions
       const envSubscriptions = getEnvSubscriptions();
 
@@ -263,24 +266,11 @@ export const settingsStore = {
     }
   },
 
-  listeners: new Set<() => void>(),
-
-  subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  },
-
-  notifyListeners(): void {
-    this.listeners.forEach((listener) => listener());
-  },
+  subscribe: listenerSet.subscribe,
 
   saveSettings(settings: AppSettings): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      this.notifyListeners();
-    }
+    writeJson(SETTINGS_KEY, settings);
+    listenerSet.notifyListeners();
   },
 
   exportSettings(includeHistory: boolean = true): string {
