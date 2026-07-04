@@ -3,9 +3,11 @@
 import React from 'react';
 import { Icons } from '@/components/ui/Icon';
 import { usePlayerSettings } from '../hooks/usePlayerSettings';
-import { settingsStore, AdFilterMode } from '@/lib/store/settings-store';
+import { settingsStore } from '@/lib/store/settings-store';
 
 import { createPortal } from 'react-dom';
+import { AdFilterGroup } from './more-menu/AdFilterGroup';
+import { DanmakuGroup } from './more-menu/DanmakuGroup';
 
 interface DesktopMoreMenuProps {
     showMoreMenu: boolean;
@@ -49,32 +51,14 @@ export function DesktopMoreMenu({
         setSkipOutroSeconds,
         setShowModeIndicator,
         setAdFilter,
-        adFilterMode,
-        setAdFilterMode,
         fullscreenType,
         setFullscreenType,
-        danmakuEnabled,
-        setDanmakuEnabled,
-        danmakuApiUrl,
-        danmakuOpacity,
-        setDanmakuOpacity,
-        danmakuFontSize,
-        setDanmakuFontSize,
-        danmakuDisplayArea,
-        setDanmakuDisplayArea,
     } = usePlayerSettings(isPremium);
 
     const buttonRef = React.useRef<HTMLButtonElement>(null);
     const menuRef = React.useRef<HTMLDivElement>(null);
     const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0, maxHeight: 'none', openUpward: false, align: 'right' as 'left' | 'right' });
-    const [isAdFilterOpen, setAdFilterOpen] = React.useState(false);
 
-    const AD_FILTER_LABELS: Record<string, string> = {
-        off: '关闭',
-        keyword: '关键词',
-        heuristic: '智能(Beta)',
-        aggressive: '激进'
-    };
     const WEB_FULLSCREEN_SIZE_LABELS: Record<'full' | 'large' | 'focused', string> = {
         full: '铺满窗口',
         large: '大窗模式',
@@ -394,140 +378,13 @@ export function DesktopMoreMenu({
             </div>
 
             {/* Ad Filter Mode Selector */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                    <Icons.ShieldAlert size={16} className="sm:w-[18px] sm:h-[18px]" />
-                    <span>广告过滤</span>
-                </div>
-                {/* Custom Ad Filter Mode Selector */}
-                <div className="relative">
-                    <button
-                        onClick={() => setAdFilterOpen(!isAdFilterOpen)}
-                        className="flex items-center gap-1 sm:gap-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] text-[10px] sm:text-xs rounded-[var(--radius-2xl)] px-2 sm:px-2.5 py-1 sm:py-1.5 outline-none hover:border-[var(--accent-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_5%,transparent)] transition-all cursor-pointer whitespace-nowrap"
-                    >
-                        <span>{AD_FILTER_LABELS[adFilterMode] || '关闭'}</span>
-                        <Icons.ChevronDown size={12} className={`text-[var(--text-color-secondary)] transition-transform duration-300 ${isAdFilterOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isAdFilterOpen && (
-                        <>
-                            <div className="fixed inset-0 z-10 cursor-default" onClick={() => setAdFilterOpen(false)} />
-                            <div className="absolute right-0 top-full mt-2 w-28 sm:w-32 bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-md)] p-1 overflow-hidden z-20 flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                                {Object.entries(AD_FILTER_LABELS).map(([mode, label]) => (
-                                    <button
-                                        key={mode}
-                                        onClick={() => {
-                                            setAdFilterMode(mode as AdFilterMode);
-                                            setAdFilterOpen(false);
-                                        }}
-                                        className={`text-left text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-[var(--radius-2xl)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] transition-colors w-full flex items-center justify-between group ${adFilterMode === mode ? 'text-[var(--accent-color)] font-medium bg-[color-mix(in_srgb,var(--accent-color)_5%,transparent)]' : 'text-[var(--text-color)]'
-                                            }`}
-                                    >
-                                        <span>{label}</span>
-                                        {adFilterMode === mode && <Icons.Check size={10} className="sm:w-[12px] sm:h-[12px] text-[var(--accent-color)]" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
+            <AdFilterGroup isPremium={isPremium} />
 
             {/* Divider */}
             <div className="h-px bg-[var(--glass-border)] my-1.5 sm:my-2" />
 
-            {/* Danmaku Toggle */}
-            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'} flex items-center justify-between gap-4`}>
-                <div className={`flex items-center gap-2 ${!danmakuApiUrl ? 'text-[var(--text-color-secondary)]' : 'text-[var(--text-color)]'} ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
-                    <Icons.Danmaku size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
-                    <span>弹幕</span>
-                    {!danmakuApiUrl && (
-                        <span className={`${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'} text-[var(--text-color-secondary)]`}>(未配置)</span>
-                    )}
-                </div>
-                <button
-                    onClick={() => danmakuApiUrl && setDanmakuEnabled(!danmakuEnabled)}
-                    disabled={!danmakuApiUrl}
-                    className={`relative rounded-full transition-all duration-300 flex-shrink-0 border border-white/20 ${!danmakuApiUrl
-                        ? 'bg-white/5 opacity-40 cursor-not-allowed'
-                        : danmakuEnabled
-                            ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)] cursor-pointer'
-                            : 'bg-white/5 hover:bg-white/10 cursor-pointer'
-                        } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
-                    aria-checked={danmakuEnabled}
-                    role="switch"
-                >
-                    <span
-                        className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${danmakuEnabled && danmakuApiUrl ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
-                            }`}
-                    />
-                </button>
-            </div>
-
-            {/* Danmaku Sub-Settings (shown when enabled and configured) */}
-            {danmakuEnabled && danmakuApiUrl && (
-                <div className={`${isRotated ? 'px-2 pb-1.5' : 'px-3 pb-2 sm:px-4 sm:pb-2.5'} space-y-2.5`}>
-                    {/* Opacity Slider */}
-                    <div className={`${isRotated ? 'ml-4' : 'ml-6 sm:ml-7'}`}>
-                        <div className={`flex items-center justify-between mb-1 ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'} text-[var(--text-color-secondary)]`}>
-                            <span>透明度</span>
-                            <span>{Math.round(danmakuOpacity * 100)}%</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="10"
-                            max="100"
-                            value={Math.round(danmakuOpacity * 100)}
-                            onChange={(e) => setDanmakuOpacity(parseInt(e.target.value) / 100)}
-                            className={`w-full accent-[var(--accent-color)] ${isRotated ? 'h-1' : 'h-1.5'}`}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-
-                    {/* Font Size Buttons */}
-                    <div className={`${isRotated ? 'ml-4' : 'ml-6 sm:ml-7'}`}>
-                        <div className={`mb-1 ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'} text-[var(--text-color-secondary)]`}>字号</div>
-                        <div className="flex gap-1 flex-wrap">
-                            {[14, 18, 20, 24, 28].map((size) => (
-                                <button
-                                    key={size}
-                                    onClick={() => setDanmakuFontSize(size)}
-                                    className={`rounded-[var(--radius-2xl)] border font-medium transition-all duration-200 cursor-pointer ${isRotated ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px] sm:text-xs'} ${danmakuFontSize === size
-                                        ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                                        : 'bg-[var(--glass-bg)] border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)]'
-                                        }`}
-                                >
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Display Area Buttons */}
-                    <div className={`${isRotated ? 'ml-4' : 'ml-6 sm:ml-7'}`}>
-                        <div className={`mb-1 ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'} text-[var(--text-color-secondary)]`}>显示区域</div>
-                        <div className="flex gap-1 flex-wrap">
-                            {([
-                                { value: 0.25, label: '1/4屏' },
-                                { value: 0.5, label: '半屏' },
-                                { value: 0.75, label: '3/4屏' },
-                                { value: 1.0, label: '全屏' },
-                            ] as const).map(({ value, label }) => (
-                                <button
-                                    key={value}
-                                    onClick={() => setDanmakuDisplayArea(value)}
-                                    className={`rounded-[var(--radius-2xl)] border font-medium transition-all duration-200 cursor-pointer ${isRotated ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px] sm:text-xs'} ${danmakuDisplayArea === value
-                                        ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                                        : 'bg-[var(--glass-bg)] border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)]'
-                                        }`}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Danmaku Toggle & Sub-Settings */}
+            <DanmakuGroup isPremium={isPremium} isRotated={isRotated} />
 
             {/* Auto Next Episode Switch */}
             <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'} flex items-center justify-between gap-4`}>
