@@ -3,7 +3,6 @@
 import React from 'react';
 import { Icons } from '@/components/ui/Icon';
 import { usePlayerSettings } from '../hooks/usePlayerSettings';
-import { settingsStore } from '@/lib/store/settings-store';
 
 import { createPortal } from 'react-dom';
 import { AdFilterGroup } from './more-menu/AdFilterGroup';
@@ -43,14 +42,12 @@ export function DesktopMoreMenu({
         autoSkipOutro,
         skipOutroSeconds,
         showModeIndicator,
-        adFilter,
         setAutoNextEpisode,
         setAutoSkipIntro,
         setSkipIntroSeconds,
         setAutoSkipOutro,
         setSkipOutroSeconds,
         setShowModeIndicator,
-        setAdFilter,
         fullscreenType,
         setFullscreenType,
     } = usePlayerSettings(isPremium);
