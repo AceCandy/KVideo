@@ -134,6 +134,20 @@ Use `announce` for outcomes the user cannot infer from the currently focused ele
 
 ---
 
+## Keyboard Navigation Strategy
+
+Keyboard users are served by three layered mechanisms — do **not** add ad-hoc roving-tabindex logic on top of them:
+
+- Plain **Tab order** across the page (default focus ring; the skip-link bypasses repetitive nav).
+- `useKeyboardNavigation` for directional nav inside a single list/grid (arrow keys, optional Home/End, Enter/Escape) — opt-in per container via `containerRef` + `itemCount`.
+- `useSpatialNavigation` (TV mode) for 2D arrow-key nav across all `[data-focusable]` elements.
+
+Roving tabindex on arbitrary control groups (e.g. the player button row) is not required: Tab order is compliant there, and the player's own sliders already handle Arrow keys (see Custom Slider Accessibility). Reach for `useKeyboardNavigation` only when a list/grid genuinely needs in-group arrow nav.
+
+Video subtitles are out of scope: the project has no VTT / `<track>` playback (danmaku is comments, not captions), so caption-track accessibility is N/A.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.
