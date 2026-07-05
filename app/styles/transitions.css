@@ -89,3 +89,22 @@
         transform: translateY(0);
     }
 }
+
+/* 网格错位入场：前若干项依次淡入上移，超出范围的项直接显示 */
+.stagger-fade > * {
+    animation: fadeInUp 0.4s ease-out both;
+}
+.stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-fade > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-fade > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-fade > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-fade > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-fade > *:nth-child(6) { animation-delay: 200ms; }
+.stagger-fade > *:nth-child(7) { animation-delay: 240ms; }
+.stagger-fade > *:nth-child(8) { animation-delay: 280ms; }
+.stagger-fade > *:nth-child(9) { animation-delay: 320ms; }
+.stagger-fade > *:nth-child(10) { animation-delay: 360ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .stagger-fade > * { animation: none; }
+}

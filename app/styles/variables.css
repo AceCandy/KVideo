@@ -16,7 +16,7 @@
 
     /* Dark Mode Palette */
     --bg-color-dark: #121212;
-    --bg-image-dark: linear-gradient(120deg, #1a1a1a 0%, #121212 100%);
+    --bg-image-dark: radial-gradient(110% 70% at 50% -12%, rgba(255, 255, 255, 0.05) 0%, transparent 50%), linear-gradient(120deg, #1a1a1a 0%, #121212 100%);
     --text-color-dark: #f5f5f7;
     --text-color-secondary-dark: #8e8e93;
     --accent-color-dark: #1A6DBF;
@@ -31,6 +31,8 @@
     --radius-full: 9999px;
     --shadow-sm: 0 1px 2px var(--shadow-color);
     --shadow-md: 0 4px 6px var(--shadow-color);
+    --shadow-lg: 0 8px 24px var(--shadow-color);
+    --shadow-focus-glow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
     --transition-fluid: 0.3s ease;
 
     /* Active Theme Variables */

@@ -42,12 +42,12 @@ export function PremiumContentGrid({
                             onVideoClick?.(video);
                         }}
                         cardStyle={{ contentVisibility: 'auto' }}
-                        cardInnerClassName="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[0_8px_24px_var(--shadow-color)] transition-shadow duration-200 ease-out"
+                        cardInnerClassName="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[var(--shadow-lg)] transition-shadow duration-200 ease-out"
                         posterClassName="bg-[var(--glass-bg)]"
                         image={video.vod_pic}
                         imageAlt={video.vod_name}
                         imageSizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                        imageClassName="object-cover transition-transform duration-300 group-hover:scale-105"
+                        imageClassName="object-cover"
                         posterChildren={
                             <>
                                 {/* 无封面兜底 */}

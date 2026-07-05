@@ -52,6 +52,17 @@ Substitutes when no browser is available:
 
 ---
 
+## Design Tokens & Glass Surfaces
+
+- **Glass surfaces need `backdrop-blur`.** Any sticky/overlay surface using the translucent `--glass-bg` (navbar, modals, capsule controls) must pair with a `backdrop-blur-*` utility. Without it, scrolling content bleeds through and fogs the surface — a direct violation of DESIGN.md's "Glass Is Not Fog" rule. The main `Navbar` shipped without blur and had to be patched.
+- **Shadows use tokens, not literals.** Use `--shadow-sm` / `--shadow-md` / `--shadow-lg` (hover lift) / `--shadow-focus-glow` (focus ring) from `app/styles/variables.css`. Do not inline `0 8px 24px ...` or re-declare the focus `color-mix` at call sites. New shadow needs → add a token first.
+- **Accent color uses tokens.** Use `--accent-color` / `--accent-color-rgb` for any accent-tinted decoration (glows, transparent fills, focus rings). Do not hardcode `#0056b3` / `#007AFF` literals — an iOS-blue glow had drifted into the capsule indicator from a non-token source.
+- **Hoist shared visual behavior to the skeleton.** When the same hover/transition appears across multiple consumers, put it on the shared skeleton once instead of duplicating it in each consumer's className.
+
+> Lesson: `PosterCard` hover scale was duplicated in two consumers (`MovieCard`, `PremiumContentGrid`) and missing in two others (`VideoCard`, `VideoGroupCard`); the duplicates were cleaned up when the behavior moved onto the `PosterCard` skeleton.
+
+---
+
 ## Forbidden Patterns
 
 | Pattern | Reason |

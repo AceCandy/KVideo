@@ -5,7 +5,7 @@
 
 import { MovieCard } from './MovieCard';
 import { CardGrid } from '@/components/ui/CardGrid';
-import { GridEmpty, GridLoading, GridNoMore } from '@/components/ui/GridState';
+import { GridEmpty, GridLoading, GridNoMore, GridSkeleton } from '@/components/ui/GridState';
 
 interface DoubanMovie {
   id: string;
@@ -32,13 +32,17 @@ export function MovieGrid({
   prefetchRef,
   loadMoreRef
 }: MovieGridProps) {
+  if (movies.length === 0 && loading) {
+    return <GridSkeleton />;
+  }
+
   if (movies.length === 0 && !loading) {
     return <GridEmpty />;
   }
 
   return (
     <>
-      <CardGrid>
+      <CardGrid className="stagger-fade">
         {movies.map((movie) => (
           <MovieCard
             key={movie.id}

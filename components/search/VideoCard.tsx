@@ -41,7 +41,7 @@ export const VideoCard = memo<VideoCardProps>(({
             onClick={(e) => onCardClick(e, cardId, videoUrl)}
             role="listitem"
             ariaLabel={`${video.vod_name}${video.vod_remarks ? ` - ${video.vod_remarks}` : ''}`}
-            cardInnerClassName="p-0 flex flex-col h-full bg-[var(--bg-color)]/50 backdrop-blur-none saturate-100 shadow-sm border-[var(--glass-border)] hover:shadow-lg transition-shadow"
+            cardInnerClassName="p-0 flex flex-col h-full bg-[var(--bg-color)]/50 backdrop-blur-none saturate-100 shadow-[var(--shadow-sm)] border-[var(--glass-border)] hover:shadow-[var(--shadow-lg)] transition-shadow"
             cardInnerStyle={{ backfaceVisibility: 'hidden' }}
             posterClassName="bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden"
             image={video.vod_pic}

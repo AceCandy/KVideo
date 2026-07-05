@@ -99,7 +99,7 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
           <div className="relative w-80 p-1 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-full grid grid-cols-2 backdrop-blur-2xl shadow-lg ring-1 ring-white/10 overflow-hidden">
             {/* Sliding Indicator */}
             <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--accent-color)] rounded-full transition-transform duration-400 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_0_15px_rgba(0,122,255,0.4)]"
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--accent-color)] rounded-full transition-transform duration-300 shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.4)]"
               style={{
                 transform: `translateX(${contentType === 'movie' ? '4px' : 'calc(100% + 4px)'})`,
               }}

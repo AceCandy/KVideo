@@ -101,7 +101,7 @@ export function PosterCard({
                             src={image}
                             alt={imageAlt}
                             fill
-                            className={`object-cover rounded-[var(--radius-2xl)] ${imageClassName}`}
+                            className={`object-cover rounded-[var(--radius-2xl)] transition-transform duration-300 ease-out group-hover:scale-105 ${imageClassName}`}
                             sizes={imageSizes}
                             loading="eager"
                             unoptimized
@@ -109,6 +109,8 @@ export function PosterCard({
                             onError={onImageError}
                         />
                     ) : null}
+                    {/* 底部渐变遮罩：增强海报底部叠加内容的可读性 */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-[var(--radius-2xl)] bg-gradient-to-t from-black/35 to-transparent" aria-hidden="true" />
                     {posterChildren}
                 </div>
                 {footer ? <div className={footerClassName}>{footer}</div> : null}

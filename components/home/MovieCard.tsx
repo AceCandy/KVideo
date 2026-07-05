@@ -35,12 +35,12 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
         onMovieClick(movie);
       }}
       cardStyle={{ contentVisibility: 'auto' }}
-      cardInnerClassName="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[0_8px_24px_var(--shadow-color)] transition-shadow duration-200 ease-out"
+      cardInnerClassName="p-0 h-full shadow-[0_2px_8px_var(--shadow-color)] hover:shadow-[var(--shadow-lg)] transition-shadow duration-200 ease-out"
       posterClassName="bg-[var(--glass-bg)]"
       image={!imageError ? movie.cover : !fallbackError ? '/placeholder-poster.svg' : undefined}
       imageAlt={movie.title}
       imageSizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-      imageClassName={!imageError ? 'object-cover transition-transform duration-300 group-hover:scale-105' : 'object-cover'}
+      imageClassName="object-cover"
       onImageError={() => {
         if (!imageError) {
           setImageError(true);
