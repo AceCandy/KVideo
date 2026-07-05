@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useEffect } from 'react';
+import { useId, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
@@ -15,12 +15,16 @@ export function ExportModal({ isOpen, onClose, onExport }: ExportModalProps) {
   const [includeWatchHistory, setIncludeWatchHistory] = useState(true);
   const titleId = useId();
 
-  useEffect(() => {
+  // Reset checkboxes when the dialog opens (prev-tracking in render avoids
+  // setState-in-effect).
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setIncludeSearchHistory(true);
       setIncludeWatchHistory(true);
     }
-  }, [isOpen]);
+  }
 
   const handleExport = () => {
     onExport(includeSearchHistory, includeWatchHistory);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useEffect } from 'react';
+import { useId, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 import { ImportModalTabs } from './import/ImportModalTabs';
@@ -37,12 +37,14 @@ export function ImportModal({
 }: ImportModalProps) {
   const [activeTab, setActiveTab] = useState<'file' | 'link' | 'subscription' | 'json'>('file');
 
-  // Reset tab on open
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab('file');
-    }
-  }, [isOpen]);
+  // Reset to the first tab when the dialog opens. Tracking the previous
+  // isOpen in render avoids setState-in-effect (React's "adjusting state
+  // when props change" pattern).
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) setActiveTab('file');
+  }
 
   const titleId = useId();
 
