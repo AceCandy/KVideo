@@ -12,6 +12,7 @@ import { PasswordGate } from "@/components/PasswordGate";
 import { siteConfig } from "@/lib/config/site-config";
 import { AdKeywordsInjector } from "@/components/AdKeywordsInjector";
 import { BackToTop } from "@/components/ui/BackToTop";
+import { ToastViewport } from "@/components/ui/Toast";
 import { ScrollPositionManager } from "@/components/ScrollPositionManager";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { RuntimeFeaturesProvider } from "@/components/RuntimeFeaturesProvider";
@@ -133,6 +134,7 @@ export default async function RootLayout({
                   <AdKeywordsWrapper />
                   {children}
                   <BackToTop />
+                  <ToastViewport />
                   <ScrollPositionManager />
                 </PasswordGate>
               </TVProvider>

@@ -92,6 +92,23 @@ Rules:
 
 ---
 
+## Toast Notifications
+
+Transient user feedback lives in a vanilla `createStore` (`toastApi` in `lib/store/toast-store.ts`), mirroring the domain-store pattern but **without** persistence — toasts are short-lived and must not survive reload.
+
+Rules:
+
+- **No React Context Provider.** Callers `import { toast } from '@/lib/store/toast-store'` and call `toast.success/error/info/warning(message, options?)` directly from a client event handler. Do not wrap the app in a `<ToastProvider>`.
+- **Only `ToastViewport` subscribes** to the `toasts` list. Components that merely trigger a toast (e.g. `FavoriteButton`, `AddSourceModal`) do not subscribe and do not re-render when toasts change.
+- **Z-index above the Modal layer.** Toasts render at `z-[10000]`; modals are `z-[9998]`/`z-[9999]`. Keep toasts visible inside open dialogs.
+- **Accessibility.** Each toast uses `role="status"` (implicitly `aria-live="polite"`). Do not route toast text through the global `#aria-live-announcer` in `app/layout.tsx` — that region serves other announcements and would double-announce.
+- **Background tasks stay silent.** Silent/automatic work (e.g. `useSubscriptionSync`) reports failures via `console.error`, not toast — surfacing a toast from a background loop violates its "work quietly" contract. Toasts are for *user-initiated* actions only.
+- **Stacking.** Max `4` visible toasts (oldest dropped FIFO); default auto-dismiss is 3s (4s for `error`); callers may override `duration`.
+
+> Example: `AddSourceModal` wraps its `onAdd` to call `toast.success('源已添加')` after the store mutation; form-validation failures still surface via the existing inline error and do not use toast.
+
+---
+
 ## Common Mistakes
 
 - Bubbling a ref up to the shell "just in case" (it belongs in its region).

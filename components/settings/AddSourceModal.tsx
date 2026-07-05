@@ -3,6 +3,7 @@
 import { useAddSourceForm } from './hooks/useAddSourceForm';
 import { ModalBackdrop } from '@/components/ui/ModalBackdrop';
 import { ModalHeader } from '@/components/ui/ModalHeader';
+import { toast } from '@/lib/store/toast-store';
 import type { VideoSource } from '@/lib/types';
 
 const inputProps = {
@@ -25,10 +26,15 @@ interface AddSourceModalProps {
 }
 
 export function AddSourceModal({ isOpen, onClose, onAdd, existingIds, initialValues }: AddSourceModalProps) {
+  const handleAdd = (source: VideoSource) => {
+    onAdd(source);
+    toast.success(initialValues ? '源已更新' : '源已添加');
+  };
+
   const { name, setName, customId, setCustomId, url, setUrl, error, handleSubmit, isEditing } = useAddSourceForm({
     isOpen,
     existingIds,
-    onAdd,
+    onAdd: handleAdd,
     onClose,
     initialValues,
   });

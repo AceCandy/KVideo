@@ -11,6 +11,7 @@
 import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
 import { favoritesApi, premiumFavoritesApi } from '@/lib/store/favorites-store';
+import { toast } from '@/lib/store/toast-store';
 import { Icons } from '@/components/ui/Icon';
 
 interface FavoriteButtonProps {
@@ -68,7 +69,7 @@ export const FavoriteButton = memo<FavoriteButtonProps>(({
         e.stopPropagation();
 
         setIsAnimating(true);
-        toggleFavorite({
+        const wasAdded = toggleFavorite({
             videoId,
             source,
             title,
@@ -79,6 +80,13 @@ export const FavoriteButton = memo<FavoriteButtonProps>(({
             remarks,
             sourceMap,
         });
+
+        const trimmedTitle = title && title.length > 20 ? `${title.slice(0, 20)}…` : (title || '');
+        if (wasAdded) {
+            toast.success(trimmedTitle ? `已收藏「${trimmedTitle}」` : '已收藏', { duration: 2500 });
+        } else {
+            toast.info('已取消收藏', { duration: 2500 });
+        }
 
         if (animTimerRef.current) clearTimeout(animTimerRef.current);
         animTimerRef.current = setTimeout(() => setIsAnimating(false), 300);
