@@ -156,7 +156,7 @@ New dialogs use `<Modal>` (`components/ui/Modal.tsx`), which owns the accessible
 - Caller responsibilities: pass `isOpen`, `onClose`, `titleId`, optional `initialFocusRef` (element to focus on open), and render title + body as children. Reuse `ModalHeader` for the title row with a close button.
 - Do **not** add a second backdrop, a second ESC listener, or `overflow:hidden` on the body — `Modal` already handles them.
 
-Existing dialogs not yet migrated (each is a follow-up task): `AddSourceModal`, `ImportModal`, `ExportModal`, `SearchHistoryDropdown`. They currently hand-roll a backdrop + fixed container without role / ESC / focus trap; migrate them to `<Modal>` when next touched.
+All dialogs now use `<Modal>`: `ConfirmDialog`, `ExportModal`, `AddSourceModal`, `ImportModal`. `SearchHistoryDropdown` is intentionally **not** a `<Modal>` — it is a `role="listbox"` dropdown anchored under the search input (combobox pattern) with its own keyboard navigation; do not wrap it in `<Modal>`.
 
 ---
 

@@ -5,12 +5,14 @@
 interface ModalHeaderProps {
     title: string;
     onClose: () => void;
+    /** id linking the title to the parent Modal's aria-labelledby. */
+    titleId?: string;
 }
 
-export function ModalHeader({ title, onClose }: ModalHeaderProps) {
+export function ModalHeader({ title, onClose, titleId }: ModalHeaderProps) {
     return (
         <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-[var(--text-color)]">
+            <h3 id={titleId} className="text-xl font-semibold text-[var(--text-color)]">
                 {title}
             </h3>
             <button
