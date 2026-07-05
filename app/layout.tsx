@@ -132,7 +132,8 @@ export default async function RootLayout({
                   )
                 )}>
                   <AdKeywordsWrapper />
-                  {children}
+                  <a href="#main-content" className="skip-link">跳到主内容</a>
+                  <main id="main-content" tabIndex={-1}>{children}</main>
                   <BackToTop />
                   <ToastViewport />
                   <ScrollPositionManager />

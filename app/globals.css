@@ -27,3 +27,27 @@
 .no-spinner {
   -moz-appearance: textfield;
 }
+
+/* Skip link: lets keyboard / screen-reader users jump past repetitive nav */
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10001;
+  padding: 0.75rem 1.25rem;
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-2xl) 0;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-150%);
+  transition: transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  pointer-events: auto;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

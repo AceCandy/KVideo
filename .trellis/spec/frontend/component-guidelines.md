@@ -113,6 +113,16 @@ Conventions:
 
 ---
 
+## Skip Link & Main Landmark
+
+Every unlocked screen (rendered through `app/layout.tsx`) must let keyboard and screen-reader users bypass repetitive navigation in one keystroke:
+
+- A `<a className="skip-link" href="#main-content">` as the first focusable element, visually hidden off-screen until `:focus` (see `.skip-link` in `globals.css`).
+- Page content wrapped in `<main id="main-content" tabIndex={-1}>` so the skip target is programmatically focusable — `tabIndex={-1}` is required for the browser to actually move focus there.
+- The skip link lives inside `PasswordGate`'s children so it only appears once unlocked; the lock screen is a single form and does not need it.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.
