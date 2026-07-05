@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { getServerSession } from '@/lib/server/auth';
 
 // 确保这行代码在整个文件中只出现一次
@@ -8,6 +9,14 @@ export const runtime = 'edge';
 const redis = Redis.fromEnv();
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`sync:${ip}`, { limit: 30, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const session = await getServerSession(request);
   const profileId = session?.profileId;
   
@@ -28,6 +37,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`sync:${ip}`, { limit: 30, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const session = await getServerSession(request);
   const profileId = session?.profileId;
   

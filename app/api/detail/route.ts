@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVideoDetail } from '@/lib/api/client';
 import { getSourceById } from '@/lib/api/video-sources';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 
 export const runtime = 'edge';
 
@@ -72,6 +73,14 @@ async function handleDetailRequest(id: string | null, source: string | null, met
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`detail:${ip}`, { limit: 60, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
@@ -93,6 +102,14 @@ export async function GET(request: NextRequest) {
 
 // Support POST method for complex requests
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`detail:${ip}`, { limit: 60, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   try {
     const body = await request.json();
     const { id, source } = body;

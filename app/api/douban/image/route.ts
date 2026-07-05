@@ -1,9 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+    const ip = getClientIp(request);
+    const rl = await rateLimit(`douban-img:${ip}`, { limit: 120, windowSec: 60 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: 'Too many requests' },
+            { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+        );
+    }
     const { searchParams } = new URL(request.url);
     const imageUrl = searchParams.get('url');
 

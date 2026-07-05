@@ -16,12 +16,10 @@ export async function fetchWithRetry({ url, request, headers = {} }: FetchWithRe
     ];
     const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
 
-    // Smart Referer: use video domain instead of kvideo.vercel.app to avoid suspicion
+    // Smart Referer: use video domain instead of kvideo.vercel.app to avoid suspicion.
+    // Fixed to the upstream host — the client cannot override Referer via query params.
     const videoUrl = new URL(url);
-    const referer = request.nextUrl.searchParams.get('referer') || `${videoUrl.protocol}//${videoUrl.hostname}`;
-
-    // Optional IP forwarding (default: Beijing IP)
-    const forwardedIP = request.nextUrl.searchParams.get('ip') || '202.108.22.5';
+    const referer = `${videoUrl.protocol}//${videoUrl.hostname}`;
 
     // SSRF guard：拦截内网 / 元数据目标
     await assertSafeOutboundUrl(url);
@@ -44,17 +42,16 @@ export async function fetchWithRetry({ url, request, headers = {} }: FetchWithRe
 
             response = await fetch(url, {
                 headers: {
-                    ...headers, // First: forwarded headers (Cookie, Range)
-                    // Then override with anti-blocking headers (these take precedence)
+                    ...headers, // Forwarded functional headers (Range only)
+                    // Anti-blocking headers only. No identity-spoofing headers
+                    // (X-Forwarded-For / Client-IP / Origin) — clients must not
+                    // impersonate source identity to upstreams.
                     'User-Agent': randomUA,
                     'Accept': '*/*',
                     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
                     'Accept-Encoding': 'gzip, deflate, br',
                     'Connection': 'keep-alive',
-                    'X-Forwarded-For': forwardedIP,
-                    'Client-IP': forwardedIP,
                     'Referer': referer,
-                    'Origin': `${videoUrl.protocol}//${videoUrl.hostname}`,
                     'Sec-Fetch-Dest': 'empty',
                     'Sec-Fetch-Mode': 'cors',
                     'Sec-Fetch-Site': 'cross-site',

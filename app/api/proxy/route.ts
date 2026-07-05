@@ -48,9 +48,11 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Extract headers to forward (only essential ones)
+        // Forward only functional headers. Cookies are intentionally excluded:
+        // the upstream URL is user-controlled, and forwarding kvideo_session
+        // would leak session credentials to arbitrary origins.
         const requestHeaders: Record<string, string> = {};
-        const forwardHeaders = ['cookie', 'range'];
+        const forwardHeaders = ['range'];
 
         forwardHeaders.forEach(key => {
             const value = request.headers.get(key);
@@ -141,8 +143,6 @@ export async function GET(request: NextRequest) {
         return new NextResponse(
             JSON.stringify({
                 error: 'Proxy request failed',
-                message: error instanceof Error ? error.message : 'Unknown error',
-                url: url
             }),
             {
                 status: 500,

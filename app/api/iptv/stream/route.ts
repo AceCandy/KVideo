@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { getRuntimeFeatures } from '@/lib/server/runtime-features';
 import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
 
@@ -93,6 +94,14 @@ const CORS_HEADERS = {
 };
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`iptv-stream:${ip}`, { limit: 60, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const runtimeFeatures = getRuntimeFeatures();
 
   if (!runtimeFeatures.iptvEnabled) {

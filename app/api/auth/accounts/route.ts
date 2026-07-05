@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import {
   createManagedAccount,
   getPublicAuthConfig,
@@ -24,6 +25,14 @@ async function requireSuperAdmin(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`acct:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const auth = await requireSuperAdmin(request);
   if ('error' in auth) {
     return auth.error;
@@ -41,6 +50,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`acct:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const auth = await requireSuperAdmin(request);
   if ('error' in auth) {
     return auth.error;

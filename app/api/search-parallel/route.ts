@@ -16,6 +16,9 @@ export const runtime = 'edge';
 const MAX_TOTAL_VIDEOS = 2000;
 const MAX_PAGES_PER_SOURCE = 3;
 const PER_SOURCE_TIMEOUT_MS = 20000;
+// Cap sources per request so outbound subrequests (sources × pages) stay
+// within edge-runtime quotas. Validated before the stream opens.
+const MAX_SOURCES = 50;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -25,6 +28,20 @@ export async function POST(request: NextRequest) {
       JSON.stringify({ type: 'error', message: 'Too many requests' }),
       { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter) } }
     );
+  }
+
+  // Pre-parse the body so an oversized source list is rejected with a 400
+  // before the SSE stream opens — otherwise edge subrequest quota is spent
+  // before the limit triggers. parsedBody is reused inside the stream.
+  let parsedBody: { query?: unknown; sources?: unknown[] };
+  try {
+    parsedBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  const sourceConfigs = Array.isArray(parsedBody.sources) ? parsedBody.sources : [];
+  if (sourceConfigs.length > MAX_SOURCES) {
+    return NextResponse.json({ error: 'Too many sources' }, { status: 400 });
   }
 
   const encoder = new TextEncoder();
@@ -44,8 +61,7 @@ export async function POST(request: NextRequest) {
       };
 
       try {
-        const body = await request.json();
-        const { query, sources: sourceConfigs } = body;
+        const { query } = parsedBody;
 
         if (!query || typeof query !== 'string' || query.trim().length === 0) {
           safeSend({ type: 'error', message: 'Invalid query' });

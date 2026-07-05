@@ -5,6 +5,7 @@
  */
 
 import { NextRequest } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { getSourceById } from '@/lib/api/video-sources';
 import { getVideoDetail } from '@/lib/api/detail-api';
 import { fetchWithTimeout } from '@/lib/api/http-utils';
@@ -151,6 +152,14 @@ async function probeOne(video: ProbeRequest, providedConfigs: Map<string, VideoS
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`probe:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter) },
+    });
+  }
   try {
     const body = await request.json();
     const videos: ProbeRequest[] = body.videos;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import {
   deleteManagedAccount,
   getPublicAuthConfig,
@@ -32,6 +33,14 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ accountId: string }> }
 ) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`acct:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const auth = await requireManagedSuperAdmin(request);
   if ('error' in auth) {
     return auth.error;
@@ -55,6 +64,14 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ accountId: string }> }
 ) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`acct:${ip}`, { limit: 10, windowSec: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
   const auth = await requireManagedSuperAdmin(request);
   if ('error' in auth) {
     return auth.error;
