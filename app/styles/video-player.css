@@ -118,6 +118,12 @@
     cursor: grabbing;
 }
 
+/* Keyboard focus ring for custom sliders (progress / volume) */
+.slider-track:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 6px;
+}
+
 /* ============================================
    LIQUID GLASS VIDEO PLAYER STYLES
    ============================================ */

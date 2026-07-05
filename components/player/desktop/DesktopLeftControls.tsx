@@ -14,6 +14,7 @@ interface DesktopLeftControlsProps {
     onToggleMute: () => void;
     onVolumeChange: (e: React.MouseEvent<HTMLDivElement>) => void;
     onVolumeMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
+    onVolumeByKey?: (volume: number) => void;
     formatTime: (seconds: number) => string;
 }
 
@@ -29,6 +30,7 @@ export function DesktopLeftControls({
     onToggleMute,
     onVolumeChange,
     onVolumeMouseDown,
+    onVolumeByKey,
     formatTime
 }: DesktopLeftControlsProps) {
     return (
@@ -51,6 +53,7 @@ export function DesktopLeftControls({
                 onToggleMute={onToggleMute}
                 onVolumeChange={onVolumeChange}
                 onVolumeMouseDown={onVolumeMouseDown}
+                onVolumeByKey={onVolumeByKey}
             />
 
             {/* Time */}

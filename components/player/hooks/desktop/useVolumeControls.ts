@@ -37,6 +37,18 @@ export function useVolumeControls({
         }
     }, [videoRef, isMuted, volume, setIsMuted]);
 
+    // Value-based volume setter used by keyboard interaction (DesktopVolumeControl onKeyDown).
+    const setVolumeTo = useCallback((v: number) => {
+        if (!videoRef.current) return;
+        const pos = Math.max(0, Math.min(1, v));
+        setVolume(pos);
+        videoRef.current.volume = pos;
+        videoRef.current.muted = pos === 0;
+        setIsMuted(pos === 0);
+        localStorage.setItem('kvideo-volume', String(pos));
+        localStorage.setItem('kvideo-muted', String(pos === 0));
+    }, [videoRef, setVolume, setIsMuted]);
+
     const showVolumeBarTemporarily = useCallback(() => {
         setShowVolumeBar(true);
         if (volumeBarTimeoutRef.current) {
@@ -98,8 +110,9 @@ export function useVolumeControls({
         toggleMute,
         showVolumeBarTemporarily,
         handleVolumeChange,
-        handleVolumeMouseDown
-    }), [toggleMute, showVolumeBarTemporarily, handleVolumeChange, handleVolumeMouseDown]);
+        handleVolumeMouseDown,
+        setVolumeTo
+    }), [toggleMute, showVolumeBarTemporarily, handleVolumeChange, handleVolumeMouseDown, setVolumeTo]);
 
     return volumeActions;
 }

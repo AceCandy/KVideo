@@ -43,6 +43,15 @@ export function useProgressControls({
         setCurrentTime(newTime);
     }, [videoRef, progressBarRef, duration, setCurrentTime, getEventPos]);
 
+    // Value-based seek used by keyboard interaction (DesktopProgressBar onKeyDown).
+    const seekTo = useCallback((time: number) => {
+        if (!videoRef.current) return;
+        const clamped = Math.max(0, Math.min(duration || 0, time));
+        videoRef.current.currentTime = clamped;
+        lastDragTimeRef.current = clamped;
+        setCurrentTime(clamped);
+    }, [videoRef, duration, setCurrentTime]);
+
     const handleProgressMouseDown = useCallback((e: any) => {
         e.preventDefault();
         isDraggingProgressRef.current = true;
@@ -135,8 +144,9 @@ export function useProgressControls({
     const progressActions = useMemo(() => ({
         handleProgressClick,
         handleProgressMouseDown,
-        handleProgressTouchStart
-    }), [handleProgressClick, handleProgressMouseDown, handleProgressTouchStart]);
+        handleProgressTouchStart,
+        seekTo
+    }), [handleProgressClick, handleProgressMouseDown, handleProgressTouchStart, seekTo]);
 
     return progressActions;
 }

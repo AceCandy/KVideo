@@ -41,6 +41,8 @@ export function DesktopControlsWrapper({ src, data, logic, refs }: DesktopContro
         handleProgressClick,
         handleProgressMouseDown,
         handleProgressTouchStart,
+        seekTo,
+        setVolumeTo,
         formatTime,
     } = logic;
 
@@ -83,6 +85,8 @@ export function DesktopControlsWrapper({ src, data, logic, refs }: DesktopContro
             onProgressClick={handleProgressClick}
             onProgressMouseDown={handleProgressMouseDown}
             onProgressTouchStart={handleProgressTouchStart}
+            onSeekByKey={seekTo}
+            onVolumeByKey={setVolumeTo}
             formatTime={formatTime}
         />
     );

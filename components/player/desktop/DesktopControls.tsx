@@ -36,6 +36,8 @@ interface DesktopControlsProps {
     onProgressClick: (e: React.MouseEvent<HTMLDivElement>) => void;
     onProgressMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
     onProgressTouchStart: (e: React.TouchEvent<HTMLDivElement>) => void;
+    onSeekByKey?: (seconds: number) => void;
+    onVolumeByKey?: (volume: number) => void;
     formatTime: (seconds: number) => string;
 }
 
@@ -49,6 +51,7 @@ export function DesktopControls(props: DesktopControlsProps) {
         onProgressClick,
         onProgressMouseDown,
         onProgressTouchStart,
+        onSeekByKey,
         formatTime,
     } = props;
 
@@ -70,6 +73,8 @@ export function DesktopControls(props: DesktopControlsProps) {
                 onProgressClick={onProgressClick}
                 onProgressMouseDown={onProgressMouseDown}
                 onProgressTouchStart={onProgressTouchStart}
+                onSeekByKey={onSeekByKey}
+                formatTime={formatTime}
             />
 
             {/* Controls Bar */}

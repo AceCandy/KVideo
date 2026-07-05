@@ -97,6 +97,22 @@ The parent owns the state; the component holds none. When `disabled`, rely on th
 
 ---
 
+## Custom Slider Accessibility
+
+Custom `<div>` sliders (e.g. `DesktopProgressBar`, `DesktopVolumeControl`) must be operable by keyboard and announced as sliders to assistive tech — native `<input type="range">` gets this for free; a styled `<div class="slider-track">` does not.
+
+Required on the track element:
+- `role="slider"`, `tabIndex={0}`, `aria-label`, `aria-orientation`, `aria-valuemin` / `aria-valuemax` / `aria-valuenow`, plus `aria-valuetext` when the raw number is unclear (e.g. `mm:ss / mm:ss` for progress).
+- `onKeyDown` handling ArrowLeft/Right/Up/Down (step) and Home/End (extent), each calling `preventDefault()` to stop page scroll.
+- A `.slider-track:focus-visible` outline in CSS so keyboard users can see the focus.
+
+Conventions:
+- Steps: progress ±5s, volume ±5%. Reuse value-based entry points extracted from the pointer handlers (`seekTo(time)` in `useProgressControls`, `setVolumeTo(v)` in `useVolumeControls`) — do not synthesize fake pointer events.
+- A slider that can collapse (volume bar) must use `tabIndex={-1}` while collapsed so it never enters the keyboard tab sequence when invisible.
+- Keep existing pointer/touch handlers untouched when adding keyboard support; keyboard is a parallel path, not a rewrite of the drag logic.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.
