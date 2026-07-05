@@ -15,6 +15,9 @@ interface SearchResultsProps {
     loading: boolean;
     isPremium?: boolean;
     latencies?: Record<string, number>;
+    loadMore?: () => void;
+    hasMore?: boolean;
+    loadingMore?: boolean;
 }
 
 export function SearchResults({
@@ -23,6 +26,9 @@ export function SearchResults({
     loading,
     isPremium = false,
     latencies = {},
+    loadMore,
+    hasMore = false,
+    loadingMore = false,
 }: SearchResultsProps) {
     // Source badges hook - filters by video source
     const {
@@ -95,6 +101,26 @@ export function SearchResults({
                 isPremium={isPremium}
                 latencies={latencies}
             />
+
+            {/* Load next page when sources report additional pages available */}
+            {hasMore && loadMore && (
+                <div className="flex justify-center mt-8">
+                    <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="btn-glass px-6 py-2.5 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <span>加载中…</span>
+                            </>
+                        ) : (
+                            <span>加载更多</span>
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

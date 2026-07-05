@@ -22,6 +22,7 @@ interface ParallelSearchResult {
   loadMore: () => Promise<void>;
   hasMore: boolean;
   loadingMore: boolean;
+  error: string | null;
 }
 
 export function useParallelSearch(
@@ -39,6 +40,7 @@ export function useParallelSearch(
     currentPage,
     maxPageCount,
     loadingMore,
+    error,
     setResults,
     setAvailableSources,
     setTotalVideosFound,
@@ -92,6 +94,7 @@ export function useParallelSearch(
     loadMore: loadMoreAction,
     hasMore,
     loadingMore,
+    error,
   };
 }
 

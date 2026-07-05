@@ -27,6 +27,7 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
         setCurrentPage,
         setMaxPageCount,
         setLoadingMore,
+        setError,
         currentPage,
         maxPageCount,
         startSearch,
@@ -107,6 +108,7 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                 },
                 onComplete: () => {
                     setLoading(false);
+                    setError(null);
 
                     // Update available sources with correct property names
                     const sources = Array.from(sourcesMap.entries()).map(([id, info]) => ({
@@ -131,6 +133,7 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                 onError: (message) => {
                     console.error('Search error:', message);
                     setLoading(false);
+                    setError(message);
                 },
             });
 
@@ -141,10 +144,11 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                 return;
             } else {
                 console.error('Search error:', error);
+                setError(error instanceof Error ? error.message : '搜索失败，请重试');
             }
             setLoading(false);
         }
-    }, [startSearch, onUrlUpdate, onCacheUpdate, setTotalSources, setResults, setCompletedSources, setTotalVideosFound, setLoading, setAvailableSources, setMaxPageCount]);
+    }, [startSearch, onUrlUpdate, onCacheUpdate, setTotalSources, setResults, setCompletedSources, setTotalVideosFound, setLoading, setAvailableSources, setMaxPageCount, setError]);
 
     const loadMore = useCallback(async () => {
         const params = lastSearchParamsRef.current;

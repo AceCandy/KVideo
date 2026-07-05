@@ -29,6 +29,10 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeRef = useRef<ActiveDanmaku[]>([]);
   const lastTimeRef = useRef(currentTime);
+  // currentTime is read inside the rAF loop via this ref so the animation
+  // effect doesn't need currentTime in its dependency array (avoids tearing
+  // down and recreating the rAF chain on every timeupdate).
+  const currentTimeRef = useRef(currentTime);
   const lastRafTimeRef = useRef(0);
   const rafRef = useRef<number>(0);
   const lastSpawnTimeRef = useRef(-1);
@@ -81,6 +85,7 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
       laneSlotsRef.current = new Array(MAX_LANES).fill(0);
     }
     lastTimeRef.current = currentTime;
+    currentTimeRef.current = currentTime;
   }, [currentTime]);
 
   // Spawn new comments based on currentTime
@@ -211,7 +216,9 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
         }
 
         ctx.restore();
-        rafRef.current = requestAnimationFrame(animate);
+        // Paused: draw the frozen comments once, then stop the rAF loop so the
+        // canvas stays idle instead of redrawing every frame. When isPlaying
+        // flips back to true, this effect re-runs and restarts the loop.
         return;
       }
 
@@ -221,7 +228,7 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
       const deltaSec = deltaMs / 1000;
 
       // Spawn new comments
-      spawnComments(currentTime);
+      spawnComments(currentTimeRef.current);
 
       // Update & filter active comments
       const newActive: ActiveDanmaku[] = [];
@@ -236,7 +243,7 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
         } else {
           // Top/bottom: remove when expired
           const expiry = (d.comment as any)._expiry || 0;
-          if (currentTime < expiry) {
+          if (currentTimeRef.current < expiry) {
             newActive.push(d);
           }
         }
@@ -268,7 +275,7 @@ export function DanmakuCanvas({ comments, currentTime, isPlaying, duration }: Da
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       lastRafTimeRef.current = 0;
     };
-  }, [isPlaying, currentTime, opacity, fontSize, spawnComments]);
+  }, [isPlaying, opacity, fontSize, spawnComments]);
 
   return (
     <canvas

@@ -1,9 +1,16 @@
 /**
  * Favorites Store - Manages user's favorite videos
- * Uses Zustand with localStorage persistence
+ * Uses Zustand with localStorage persistence.
+ *
+ * Vanilla store APIs (favoritesApi / premiumFavoritesApi) are exported so that:
+ *  - the useFavorites helper can subscribe to a single store dynamically,
+ *    instead of subscribing to BOTH normal and premium stores unconditionally;
+ *  - high-frequency consumers (e.g. FavoriteButton, rendered once per search
+ *    card) can subscribe to a fine-grained slice via useStore(api, selector)
+ *    and avoid re-rendering on unrelated favorites changes.
  */
 
-import { create } from 'zustand';
+import { createStore, useStore } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { FavoriteItem } from '@/lib/types';
 import { profiledKey } from '@/lib/utils/profile-storage';
@@ -36,7 +43,7 @@ function generateFavoriteId(
 }
 
 const createFavoritesStore = (name: string) =>
-    create<FavoritesStore>()(
+    createStore<FavoritesStore>()(
         persist(
             (set, get) => ({
                 favorites: [],
@@ -118,14 +125,44 @@ const createFavoritesStore = (name: string) =>
         )
     );
 
-export const useFavoritesStore = createFavoritesStore(profiledKey('kvideo-favorites-store'));
-export const usePremiumFavoritesStore = createFavoritesStore(profiledKey('kvideo-premium-favorites-store'));
+// Vanilla store APIs — used by useStore(api, selector) for fine-grained subscriptions.
+export const favoritesApi = createFavoritesStore(profiledKey('kvideo-favorites-store'));
+export const premiumFavoritesApi = createFavoritesStore(profiledKey('kvideo-premium-favorites-store'));
+
+// Bound hooks. Callable as a hook with an optional selector (no selector
+// returns the full state, same shape as the previous `create`-based hook), and
+// also expose the vanilla store methods (getState/setState/subscribe) for
+// non-React callers (AutoSync, useCloudSync) that read or subscribe outside
+// components.
+type FavoritesBoundHook = {
+    <T = FavoritesStore>(selector?: (s: FavoritesStore) => T): T;
+    getState: typeof favoritesApi.getState;
+    setState: typeof favoritesApi.setState;
+    subscribe: typeof favoritesApi.subscribe;
+};
+
+function bindFavoritesHook(api: typeof favoritesApi): FavoritesBoundHook {
+    return Object.assign(
+        function useBoundFavorites<T = FavoritesStore>(selector?: (s: FavoritesStore) => T) {
+            return useStore(api, (state) => (selector ? selector(state) : (state as unknown as T)));
+        },
+        {
+            getState: api.getState,
+            setState: api.setState,
+            subscribe: api.subscribe,
+        }
+    );
+}
+
+export const useFavoritesStore = bindFavoritesHook(favoritesApi);
+export const usePremiumFavoritesStore = bindFavoritesHook(premiumFavoritesApi);
 
 /**
- * Helper hook to get the appropriate favorites store
+ * Helper hook: subscribe to the selected store only (not both).
+ * For high-frequency consumers prefer useStore(favoritesApi, selector) directly
+ * to subscribe to a narrow slice and avoid unrelated re-renders.
  */
 export function useFavorites(isPremium = false) {
-    const normalStore = useFavoritesStore();
-    const premiumStore = usePremiumFavoritesStore();
-    return isPremium ? premiumStore : normalStore;
+    const api = isPremium ? premiumFavoritesApi : favoritesApi;
+    return useStore(api);
 }

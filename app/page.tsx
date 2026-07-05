@@ -22,6 +22,10 @@ function HomePage() {
     handleSearch,
     handleReset,
     handleCancelSearch,
+    loadMore,
+    hasMore,
+    loadingMore,
+    error,
   } = useHomePage();
 
   // Real-time latency pinging
@@ -66,6 +70,9 @@ function HomePage() {
             availableSources={availableSources}
             loading={loading}
             latencies={latencies}
+            loadMore={loadMore}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
           />
         )}
 
@@ -76,8 +83,23 @@ function HomePage() {
           </>
         )}
 
+        {/* Search failed (network / all sources failed) — offer retry */}
+        {!loading && hasSearched && error && results.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="glass-card rounded-[var(--radius-2xl)] p-8 max-w-md">
+              <p className="text-[var(--text-color)] mb-4">搜索失败，请检查网络后重试</p>
+              <button
+                onClick={() => query && handleSearch(query)}
+                className="btn-glass px-6 py-2.5"
+              >
+                重试
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* No Results */}
-        {!loading && hasSearched && results.length === 0 && (
+        {!loading && hasSearched && results.length === 0 && !error && (
           <NoResults onReset={handleReset} />
         )}
       </main>

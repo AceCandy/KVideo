@@ -75,6 +75,23 @@ Do not split an effect from the state it writes, and do not change a stable depe
 
 ---
 
+## Store Subscriptions
+
+Zustand domain stores are created with vanilla `createStore` and bound to hooks, so the same store can be consumed two ways:
+
+- **Inside React**: `useStore(api, selector)` — subscribe to a narrow slice.
+- **Outside React** (sync loops, event handlers): `api.getState()` / `api.subscribe()`.
+
+Rules:
+
+- Never subscribe to two stores unconditionally. A `useFavorites(isPremium)`-style helper must pick one store dynamically (`useStore(isPremium ? premiumApi : normalApi, selector)`), not call both `useXxxStore()` and `usePremiumXxxStore()` at the top level — otherwise every consumer re-renders on either store changing.
+- High-frequency consumers (e.g. `FavoriteButton`, rendered once per search card) must subscribe via selector to only the slice they render (`isFavorite(videoId, source)`), not the whole store object. Action references (`toggleFavorite`) are stable and do not cause re-renders.
+- Bound hooks (`useFavoritesStore`) also expose `getState` / `setState` / `subscribe` for non-React callers — preserve these when refactoring a `create`-based store to `createStore`.
+
+> Example: `FavoriteButton` uses `useStore(favoritesApi, s => s.favorites.some(...))` so toggling a favorite re-renders only that button, not every card in the grid.
+
+---
+
 ## Common Mistakes
 
 - Bubbling a ref up to the shell "just in case" (it belongs in its region).

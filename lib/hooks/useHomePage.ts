@@ -38,6 +38,7 @@ export function useHomePage() {
         loadMore,
         hasMore,
         loadingMore,
+        error,
     } = useParallelSearch(
         saveToCache,
         onUrlUpdate
@@ -174,5 +175,6 @@ export function useHomePage() {
         loadMore,
         hasMore,
         loadingMore,
+        error,
     };
 }

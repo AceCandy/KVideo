@@ -11,6 +11,10 @@ export function useSearchState() {
     const [currentPage, setCurrentPage] = useState(1);
     const [maxPageCount, setMaxPageCount] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
+    // Search failure message (network error, all sources failed). Kept separate
+    // from "zero results" so the UI can distinguish "failed, retry" from
+    // "succeeded but empty". AbortError never sets this.
+    const [error, setError] = useState<string | null>(null);
     const currentQueryRef = useRef<string>('');
 
     const resetState = useCallback(() => {
@@ -23,6 +27,7 @@ export function useSearchState() {
         setCurrentPage(1);
         setMaxPageCount(1);
         setLoadingMore(false);
+        setError(null);
         currentQueryRef.current = '';
     }, []);
 
@@ -36,6 +41,7 @@ export function useSearchState() {
         setCurrentPage(1);
         setMaxPageCount(1);
         setLoadingMore(false);
+        setError(null);
         currentQueryRef.current = query;
     }, []);
 
@@ -58,6 +64,8 @@ export function useSearchState() {
         setMaxPageCount,
         loadingMore,
         setLoadingMore,
+        error,
+        setError,
         currentQueryRef,
         resetState,
         startSearch,

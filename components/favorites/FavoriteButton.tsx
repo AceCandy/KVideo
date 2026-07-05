@@ -1,12 +1,16 @@
 /**
  * FavoriteButton - Reusable favorite toggle button
- * Heart icon that fills when favorited, with animation
+ * Heart icon that fills when favorited, with animation.
+ *
+ * Subscribes to only this card's favorite slice via useStore(api, selector),
+ * so a favorite change elsewhere no longer re-renders every button in the grid.
  */
 
 'use client';
 
-import { memo, useCallback, useState, useEffect } from 'react';
-import { useFavorites } from '@/lib/store/favorites-store';
+import { memo, useCallback, useState, useEffect, useRef } from 'react';
+import { useStore } from 'zustand';
+import { favoritesApi, premiumFavoritesApi } from '@/lib/store/favorites-store';
 import { Icons } from '@/components/ui/Icon';
 
 interface FavoriteButtonProps {
@@ -40,21 +44,31 @@ export const FavoriteButton = memo<FavoriteButtonProps>(({
     showTooltip = true,
     isPremium = false,
 }) => {
-    const { isFavorite, toggleFavorite } = useFavorites(isPremium);
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [isFav, setIsFav] = useState(false);
+    // Pick the store dynamically (parameter, not a conditional hook call) and
+    // subscribe only to whether THIS item is favorited + the toggle action.
+    // Both selectors return stable primitives/references, so unrelated favorites
+    // changes do not re-render this button.
+    const api = isPremium ? premiumFavoritesApi : favoritesApi;
+    const isFav = useStore(api, (s) =>
+        s.favorites.some((f) => f.videoId === videoId && f.source === source)
+    );
+    const toggleFavorite = useStore(api, (s) => s.toggleFavorite);
 
-    // Sync with store on mount and when dependencies change
+    const [isAnimating, setIsAnimating] = useState(false);
+    const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
-        setIsFav(isFavorite(videoId, source));
-    }, [videoId, source, isFavorite]);
+        return () => {
+            if (animTimerRef.current) clearTimeout(animTimerRef.current);
+        };
+    }, []);
 
     const handleClick = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         setIsAnimating(true);
-        const newState = toggleFavorite({
+        toggleFavorite({
             videoId,
             source,
             title,
@@ -65,9 +79,9 @@ export const FavoriteButton = memo<FavoriteButtonProps>(({
             remarks,
             sourceMap,
         });
-        setIsFav(newState);
 
-        setTimeout(() => setIsAnimating(false), 300);
+        if (animTimerRef.current) clearTimeout(animTimerRef.current);
+        animTimerRef.current = setTimeout(() => setIsAnimating(false), 300);
     }, [videoId, source, title, poster, sourceName, type, year, remarks, sourceMap, toggleFavorite]);
 
     return (
