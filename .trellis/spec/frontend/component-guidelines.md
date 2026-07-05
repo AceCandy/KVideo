@@ -123,6 +123,17 @@ Every unlocked screen (rendered through `app/layout.tsx`) must let keyboard and 
 
 ---
 
+## Live Regions (aria-live)
+
+Two non-overlapping channels for telling screen-reader users about state changes:
+
+- `#aria-live-announcer` (declared in `app/layout.tsx`) is the global polite live region for cross-component / non-visual status. Write to it via `announce(message)` from `lib/utils/aria-announce.ts` — never set its `textContent` directly. `announce` clears then re-sets on a tick so identical consecutive messages still re-announce.
+- Component-local immediate feedback (a toast, an inline status) uses `role="status"` on the element itself; do **not** also route the same message through `announce`, or SR users hear it twice.
+
+Use `announce` for outcomes the user cannot infer from the currently focused element — e.g. parallel search completion (`useSearchAction` reports "搜索完成，找到 N 条结果" / "未找到相关内容"). Avoid it for high-frequency progress updates; polite regions still queue and can flood the SR queue.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.

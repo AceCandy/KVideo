@@ -3,6 +3,7 @@ import { SOURCE_IDS } from '@/lib/utils/source-names';
 import { sortVideos } from '@/lib/utils/sort';
 import { binaryInsertVideos } from '@/lib/utils/sorted-insert';
 import { processSearchStream } from '@/lib/utils/search-stream';
+import { announce } from '@/lib/utils/aria-announce';
 import type { SortOption } from '@/lib/store/settings-store';
 import { settingsStore } from '@/lib/store/settings-store';
 import type { Video } from '@/lib/types';
@@ -117,6 +118,11 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                         count: info.count,
                     }));
                     setAvailableSources(sources);
+
+                    // Tell screen-reader users the search outcome so they do not
+                    // have to explore the result area to learn it.
+                    const totalFound = sources.reduce((sum, s) => sum + s.count, 0);
+                    announce(totalFound > 0 ? `搜索完成，找到 ${totalFound} 条结果` : '未找到相关内容');
 
                     // Apply final sorting after all results are received
                     setResults((currentResults) => {
