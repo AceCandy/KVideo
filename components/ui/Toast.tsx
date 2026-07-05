@@ -75,7 +75,7 @@ function ToastItem({ toast }: { toast: Toast }) {
     return (
         <div
             role="status"
-            className={`relative pointer-events-auto flex items-center gap-3 pl-3 pr-2 py-2.5 rounded-[var(--radius-xl)] bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] shadow-[var(--shadow-md)] overflow-hidden transition-all duration-300 ease-out ${shown ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+            className={`relative pointer-events-auto flex items-center gap-3 pl-3 pr-2 py-2.5 rounded-[var(--radius-2xl)] bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] shadow-[var(--shadow-md)] overflow-hidden transition-all duration-300 ease-out ${shown ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
                 }`}
         >
             <span className={`absolute left-0 top-0 bottom-0 w-1 ${style.bar}`} aria-hidden="true" />
