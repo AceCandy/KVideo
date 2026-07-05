@@ -148,6 +148,18 @@ Video subtitles are out of scope: the project has no VTT / `<track>` playback (d
 
 ---
 
+## Modal / Dialog
+
+New dialogs use `<Modal>` (`components/ui/Modal.tsx`), which owns the accessible-dialog contract so callers do not reimplement it:
+
+- `<Modal>` provides `role` (default `dialog`, or `alertdialog` for confirms), `aria-modal="true"`, `aria-labelledby` (caller passes a `useId()`-generated `titleId` and puts it on the title element), focus trap (Tab cycles inside), focus restore (returns to the trigger on close), Escape-to-close, and body scroll lock.
+- Caller responsibilities: pass `isOpen`, `onClose`, `titleId`, optional `initialFocusRef` (element to focus on open), and render title + body as children. Reuse `ModalHeader` for the title row with a close button.
+- Do **not** add a second backdrop, a second ESC listener, or `overflow:hidden` on the body — `Modal` already handles them.
+
+Existing dialogs not yet migrated (each is a follow-up task): `AddSourceModal`, `ImportModal`, `ExportModal`, `SearchHistoryDropdown`. They currently hand-roll a backdrop + fixed container without role / ESC / focus trap; migrate them to `<Modal>` when next touched.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.
