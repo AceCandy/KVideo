@@ -144,7 +144,7 @@ export function useIptvHls(
       video.removeEventListener('durationchange', onDurationChange);
       video.removeEventListener('volumechange', onVolumeChange);
     };
-  }, []);
+  }, [videoRef]);
 
   const reload = useCallback((url: string) => {
     const video = videoRef.current;
@@ -354,7 +354,7 @@ export function useIptvHls(
         }, { once: true });
       }, { once: true });
     }
-  }, [channel.httpUserAgent, channel.httpReferrer]);
+  }, [channel.httpUserAgent, channel.httpReferrer, videoRef]);
 
   // Unmount cleanup: destroy hls + clear loading timeout
   useEffect(() => {
@@ -375,20 +375,20 @@ export function useIptvHls(
     if (!video) return;
     if (video.paused) video.play().catch(() => {});
     else video.pause();
-  }, []);
+  }, [videoRef]);
 
   const toggleMute = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     video.muted = !video.muted;
-  }, []);
+  }, [videoRef]);
 
   const setVolumeLevel = useCallback((value: number) => {
     const video = videoRef.current;
     if (!video) return;
     video.volume = value;
     if (value > 0 && video.muted) video.muted = false;
-  }, []);
+  }, [videoRef]);
 
   const seekTo = useCallback((e: MouseEvent<HTMLDivElement>) => {
     if (isLive) return;
@@ -400,7 +400,7 @@ export function useIptvHls(
     const rect = bar.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     video.currentTime = seekRange.start + ratio * seekRange.duration;
-  }, [isLive]);
+  }, [isLive, videoRef, progressRef]);
 
   return {
     error,

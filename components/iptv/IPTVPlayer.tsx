@@ -83,11 +83,15 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
     reload(currentUrl);
   }, [currentUrl, reload]);
 
-  // Reset route index when channel changes
-  useEffect(() => {
+  // Reset route index when the channel changes. Adjust during render (not in an
+  // effect) so React Compiler can keep optimizing the shell.
+  const channelKey = channel.name + '|' + channel.url;
+  const [prevChannelKey, setPrevChannelKey] = useState(channelKey);
+  if (channelKey !== prevChannelKey) {
+    setPrevChannelKey(channelKey);
     setCurrentRouteIndex(0);
     setShowAllRoutes(false);
-  }, [channel.name, channel.url]);
+  }
 
   const progressPercent = useMemo(() => {
     if (seekWindow) {
