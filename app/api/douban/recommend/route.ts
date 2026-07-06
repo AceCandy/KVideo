@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // 转换图片链接使用代理
     if (data.subjects && Array.isArray(data.subjects)) {
-      data.subjects = data.subjects.map((item: any) => ({
+      data.subjects = (data.subjects as Array<{ cover?: string }>).map((item) => ({
         ...item,
         cover: item.cover ? `/api/douban/image?url=${encodeURIComponent(item.cover)}` : item.cover,
       }));
