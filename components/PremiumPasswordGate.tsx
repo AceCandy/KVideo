@@ -110,7 +110,7 @@ export function PremiumPasswordGate({ children }: { children: React.ReactNode })
                                 }}
                                 placeholder="输入高级内容密码..."
                                 className={`w-full px-4 py-3 rounded-[var(--radius-2xl)] bg-[var(--glass-bg)] border ${error ? 'border-red-500' : 'border-[var(--glass-border)]'
-                                    } focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.3)] transition-all duration-[0.4s] cubic-bezier(0.2,0.8,0.2,1) text-white placeholder-gray-500`}
+                                    } focus:outline-none focus:border-amber-500 focus:ring-[3px] focus:ring-amber-500/30 transition-all duration-[0.4s] cubic-bezier(0.2,0.8,0.2,1) text-white placeholder-gray-500`}
                                 autoFocus
                             />
                             {error && (

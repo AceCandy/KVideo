@@ -429,7 +429,7 @@
 
 .progress-bar-glass .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-color), #5ac8fa);
+    background: var(--accent-color);
     border-radius: var(--radius-full);
     transition: width 0.1s linear;
 }
