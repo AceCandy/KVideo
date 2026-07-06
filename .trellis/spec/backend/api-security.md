@@ -32,7 +32,7 @@ Do not read query params (`?ip=`, `?referer=`) and write them into outbound head
 
 ### 3. Rate-limit outbound-amplifying and sensitive-write endpoints
 
-Any endpoint that fans out into multiple outbound fetches, or mutates auth/account state, must call `rateLimit` (IP-scoped) at the handler entry, before parameter validation.
+Any endpoint that fans out into multiple outbound fetches, or mutates auth/account state, must call `rateLimit` (IP-scoped) before its outbound fan-out. The default position is the handler entry, before parameter validation — **except** when the endpoint serves an application-layer cache: then look up the cache first and rate-limit only the miss branch, so cache hits do not consume quota (see "Cache-first rate limiting" below).
 
 - **Where**: `detail`, `probe-resolution`, `iptv/stream`, `douban/image`, `douban/recommend`, `auth/accounts` (including `[accountId]`), `user/sync`.
 - **Pattern**:
@@ -46,8 +46,21 @@ Any endpoint that fans out into multiple outbound fetches, or mutates auth/accou
     );
   }
   ```
-- **Quota tiers** (initial values, tune on regression): amplifiers `detail`/`iptv-stream`/`douban-image` 60–120/60s; `probe-resolution` and account writes 10/60s (highest blast radius per request).
+- **Quota tiers** (initial values, tune on regression): amplifiers `detail`/`iptv-stream`/`douban-image` 60–120/60s; `probe-resolution` and account writes 10/60s (highest blast radius per request); `douban-rec` 200/60s (looser, because `douban/recommend` serves an application-layer cache — see below).
 - **Why**: `probe-resolution` can trigger hundreds of subrequests per request; unbounded endpoints bypass the rate limiting that `proxy` and `search` already enforce.
+- **Cache-first rate limiting**: when an endpoint caches its upstream response in application-layer storage (`douban/recommend` via `lib/server/douban-cache.ts`), rate-limit only the cache-miss branch. A cache hit returns directly and must **not** call `rateLimit`, so legitimate repeated refreshes are not penalized for responses that never reach the upstream.
+  - **Pattern**:
+    ```ts
+    const cacheKey = buildCacheKey(params);
+    const cached = await getCached(cacheKey);
+    if (cached) return NextResponse.json(JSON.parse(cached)); // no rateLimit on hit
+    const rl = await rateLimit(`${scope}:${ip}`, { limit, windowSec: 60 });
+    if (!rl.success) return /* 429 */;
+    // ... fetch upstream, transform, await setCached(cacheKey, body)
+    ```
+  - The cache key namespace must differ from the rate-limit key (e.g. `douban-rec:cache:` vs `ratelimit:`) so counters and entries never collide.
+  - The limiter degrades gracefully: with no Redis configured, the cache layer is a no-op and the endpoint falls back to entry-position limiting at the same quota, never erroring.
+  - **Why**: with the entry-position limiter, `douban/recommend` returned 429 after ~5 refreshes because a single home page load fires up to 6 parallel recommend requests (`usePopularMovies` + up to 5 `usePersonalizedRecommendations`), and hits to Next's fetch cache still incremented the counter (the limiter ran before the cached fetch resolved).
 
 ### 4. Cap fan-out inputs before streaming
 
