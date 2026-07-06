@@ -55,6 +55,16 @@ test('getClientIp：无 xff 且无 request.ip 回退 unknown', () => {
   assert.equal(getClientIp(req), 'unknown');
 });
 
+test('getClientIp：cf-connecting-ip 优先于 x-forwarded-for', () => {
+  const req = new NextRequest('https://example.com/api/x', {
+    headers: {
+      'cf-connecting-ip': '198.51.100.7',
+      'x-forwarded-for': '203.0.113.5',
+    },
+  });
+  assert.equal(getClientIp(req), '198.51.100.7');
+});
+
 test('buildRateLimitKey 拼接 scope 与 identifier', () => {
   assert.equal(buildRateLimitKey('login', '1.2.3.4'), 'login:1.2.3.4');
 });

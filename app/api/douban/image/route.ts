@@ -6,7 +6,7 @@ export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
     const ip = getClientIp(request);
-    const rl = await rateLimit(`douban-img:${ip}`, { limit: 120, windowSec: 60 });
+    const rl = await rateLimit(`douban-img:${ip}`, { limit: 600, windowSec: 60 });
     if (!rl.success) {
         return NextResponse.json(
             { error: 'Too many requests' },

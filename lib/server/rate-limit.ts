@@ -98,10 +98,12 @@ function memoryRateLimit(key: string, limit: number, windowSec: number): RateLim
 }
 
 /**
- * 获取客户端 IP。优先 x-forwarded-for 首段（反向代理可信场景），
- * 回退 request.ip（Vercel/CF Edge 由平台填充），再回退 'unknown'。
+ * 获取客户端 IP。优先 cf-connecting-ip（Cloudflare 直填的真实客户端 IP，最可信），
+ * 其次 x-forwarded-for 首段（其他反向代理），再回退 request.ip，最后 'unknown'。
  */
 export function getClientIp(request: NextRequest): string {
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp.trim();
   const xff = request.headers.get('x-forwarded-for');
   if (xff) {
     const first = xff.split(',')[0]?.trim();
