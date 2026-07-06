@@ -75,7 +75,6 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 122, 255, 0.6);
     background: color-mix(in srgb, var(--accent-color) 60%, transparent);
     background-clip: padding-box;
 }
@@ -173,7 +172,7 @@ nav {
 body.tv-mode [data-focusable]:focus {
     outline: 3px solid var(--accent-color);
     outline-offset: 4px;
-    box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.2);
+    box-shadow: 0 0 0 6px rgba(var(--accent-color-rgb), 0.2);
     transform: scale(1.03);
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }

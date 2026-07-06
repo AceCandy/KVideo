@@ -204,7 +204,7 @@
     border-top-color: var(--accent-color);
     border-radius: var(--radius-full);
     animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+    box-shadow: 0 0 20px rgba(var(--accent-color-rgb), 0.3);
 }
 
 /* Next Episode Loading Indicator */
@@ -369,7 +369,7 @@
 }
 
 .player-menu-glass .menu-item.active {
-    background: rgba(0, 122, 255, 0.2);
+    background: rgba(var(--accent-color-rgb), 0.2);
     color: var(--accent-color);
 }
 
@@ -411,7 +411,7 @@
 .btn-glass:focus-visible,
 .btn-icon:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.5);
 }
 
 /* Progress Bar Enhanced */
