@@ -164,6 +164,8 @@ export function interleaveResults(
   watchedTitles: Set<string>
 ): InterleavedMovie[] {
   const interleaved: InterleavedMovie[] = [];
+  // id 去重对齐 React key；title 去重保留给已观看过滤（历史记录无豆瓣 id）
+  const seenIds = new Set<string>();
   const seenTitles = new Set<string>();
 
   // Find the max length across all result arrays
@@ -182,10 +184,13 @@ export function interleaveResults(
       const movie = result.movies[i];
       const titleKey = movie.title.toLowerCase().trim();
 
-      // Skip duplicates and already-watched
+      // 同片在不同 query 下 title 可能存在空格/全角等细微差异，按 title 去重会漏；
+      // 以 id 为准去重，与 MovieGrid 的 key 维度一致
+      if (seenIds.has(movie.id)) continue;
       if (seenTitles.has(titleKey)) continue;
       if (watchedTitles.has(titleKey)) continue;
 
+      seenIds.add(movie.id);
       seenTitles.add(titleKey);
       interleaved.push({
         ...movie,
