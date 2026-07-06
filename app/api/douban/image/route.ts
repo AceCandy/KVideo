@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
-import { assertSafeOutboundUrl, SsrfGuardError } from '@/lib/server/url-guard';
+import { assertSafeOutboundUrl } from '@/lib/server/url-guard';
 
 export const runtime = 'edge';
 
@@ -62,12 +62,12 @@ export async function GET(request: NextRequest) {
         headers.set('Cache-Control', 'public, max-age=15720000, s-maxage=15720000');
 
         // 直接返回图片流
-        // @ts-ignore
+        // @ts-expect-error ReadableStream 赋给 Response init 的已知类型缺口
         return new Response(imageResponse.body, {
             status: 200,
             headers,
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             { error: 'Error fetching image' },
             { status: 500 }
