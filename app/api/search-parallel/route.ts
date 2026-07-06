@@ -18,7 +18,7 @@ const MAX_PAGES_PER_SOURCE = 3;
 const PER_SOURCE_TIMEOUT_MS = 20000;
 // Cap sources per request so outbound subrequests (sources × pages) stay
 // within edge-runtime quotas. Validated before the stream opens.
-const MAX_SOURCES = 50;
+const MAX_SOURCES = 100;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);

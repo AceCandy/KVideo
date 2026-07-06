@@ -17,6 +17,23 @@ interface UseSearchActionProps {
     onUrlUpdate: (query: string) => void;
 }
 
+// 将搜索接口的非 2xx 响应解析为面向用户的中文提示。
+// 后端错误体格式不统一（429 用 message，400 用 error），这里统一兼容。
+async function resolveSearchError(response: Response): Promise<string> {
+    const status = response.status;
+    let detail = '';
+    try {
+        const body = await response.json();
+        detail = (body && (body.message || body.error)) || '';
+    } catch {
+        // 响应体非 JSON 或已被消费，忽略
+    }
+    if (status === 429) return '搜索过于频繁，请稍后再试';
+    if (detail === 'Too many sources') return '启用的源过多，请在设置中关闭部分源后重试';
+    if (status >= 400 && status < 500) return detail ? `搜索失败：${detail}` : `搜索失败（${status}）`;
+    return `搜索失败（${status}）`;
+}
+
 export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearchActionProps) {
     const {
         setLoading,
@@ -45,10 +62,9 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
         let targetSources = sources;
         if (!targetSources || targetSources.length === 0) {
             const settings = settingsStore.getSettings();
-            targetSources = [
-                ...settings.sources,
-                ...settings.subscriptions.filter(s => (s as any).enabled !== false), // Include valid subscriptions
-            ].filter(s => (s as any).enabled !== false);
+            // 订阅展开后的真实源已合并进 settings.sources；subscriptions 仅是订阅元数据（无 baseUrl），
+            // 不能作为可搜索源直接发送给后端，否则会构造出无效请求并占用计数。
+            targetSources = settings.sources.filter(s => (s as any).enabled !== false);
         }
 
         // Abort any ongoing search
@@ -74,7 +90,7 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                 signal: abortControllerRef.current.signal,
             });
 
-            if (!response.ok) throw new Error('Search failed');
+            if (!response.ok) throw new Error(await resolveSearchError(response));
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response stream');
@@ -179,7 +195,12 @@ export function useSearchAction({ state, onCacheUpdate, onUrlUpdate }: UseSearch
                 signal: abortControllerRef.current.signal,
             });
 
-            if (!response.ok) throw new Error('Load more failed');
+            if (!response.ok) {
+                const detail = await response.text().catch(() => '');
+                console.error('Load more failed:', response.status, detail);
+                setLoadingMore(false);
+                return;
+            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No response stream');
