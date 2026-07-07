@@ -6,9 +6,9 @@
  * 拦截内网 / 链路本地 / 元数据 / 非公网目标，放行公网 http/https 源。
  *
  * 设计约束：
- * - 核心校验为纯函数，不静态依赖 node 模块，保证 edge runtime 构建通过。
- * - DNS 解析作为增强，运行时按能力动态加载 node:dns，不可用则降级为
- *   hostname/IP 字面量校验。
+ * - 核心校验为纯函数，不静态依赖 node 模块。
+ * - DNS 解析作为增强：node:dns import 用字符串拼接规避 Edge 构建期静态扫描，
+ *   运行时按能力加载，不可用则降级为 hostname/IP 字面量校验。
  * - 残留风险：DNS rebinding（校验与 fetch 两次解析结果不一致）不在本版本防护范围；
  *   彻底防护需改变 redirect/agent 行为，会破坏视频源兼容性。
  */
@@ -97,9 +97,10 @@ export class SsrfGuardError extends Error {
  * 解析失败时降级放行，交由 fetch 自然失败（避免 DNS 抖动误伤合法源）。
  */
 async function assertPublicResolvable(host: string): Promise<void> {
-    // webpackIgnore: 让 webpack 不把 node:dns 打进 bundle（edge 构建不支持 node: scheme）。
+    // 字符串拼接规避 Next.js Edge 构建期静态扫描（扫描只认字面量）；
+    // webpackIgnore 让 webpack 不尝试解析 node: scheme，否则触发 UnhandledSchemeError。
     // 运行时由 Node 原生解析；Edge 平台 import 会抛 → 降级为字面量校验。
-    const dns = await import(/* webpackIgnore: true */ 'node:dns/promises').catch(() => null);
+    const dns = await import(/* webpackIgnore: true */ 'node:' + 'dns/promises').catch(() => null);
     if (!dns) return; // node:dns 不可用（部分 edge 平台），降级为字面量校验
     let entries: { address: string; family: number }[];
     try {

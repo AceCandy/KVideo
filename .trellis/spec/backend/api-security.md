@@ -76,6 +76,24 @@ Endpoints that accept arrays of upstreams (`search-parallel` `sources`, `probe-r
 - **Where**: `app/api/proxy/route.ts` catch block.
 - **Why**: CORS is `*`, so any site can read these responses; internal URLs, params, and error text are information disclosure.
 
+### 6. Edge-runtime node-module imports need a double bypass
+
+Server utilities that are imported by any `runtime = 'edge'` route must not trip Next.js's build-time node-module checks. `lib/server/url-guard.ts` is in this category — it is reached by 8+ edge routes directly and by `detail` via `http-utils`. A literal dynamic `import('node:dns/promises')` fails the build even when wrapped in `try/catch`, because **two independent checks run at build time, not at runtime**:
+
+- **webpack module resolution** → `UnhandledSchemeError` on the `node:` scheme (webpack constant-folds `'node:' + 'dns/promises'` back to a literal before resolving).
+- **Next.js Edge Runtime AST scan** → "not supported in the Edge Runtime"; it matches literal module specifiers only and ignores runtime branches.
+
+Pattern that bypasses both:
+```ts
+const dns = await import(/* webpackIgnore: true */ 'node:' + 'dns/promises').catch(() => null);
+```
+- `/* webpackIgnore: true */` stops webpack from resolving the `node:` scheme (otherwise `UnhandledSchemeError`).
+- String concatenation hides the literal from the Edge AST scan (the scan only sees `'node:' + 'dns/promises'`, never the joined specifier).
+- `.catch(() => null)` preserves the runtime fallback: Node resolves normally; Edge throws → degrade to hostname/IP literal checks.
+
+- **Where**: `lib/server/url-guard.ts` `assertPublicResolvable`.
+- **Why**: DNS resolution is an enhancement layered on a pure-function core; the design intent is "Node strengthens, Edge degrades". Removing either guard re-introduces a build failure on every edge route that imports the guard.
+
 ---
 
 ## Validation
