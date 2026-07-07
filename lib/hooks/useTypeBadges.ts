@@ -15,20 +15,29 @@ import type { TypeBadge } from '@/lib/types';
  * - Supports filtering by selected types
  */
 
-// Normalize type names to merge near-duplicates
-function normalizeTypeName(type: string): string {
-  // Collapse whitespace and trim
+// 类型标签的等价别名，统一归并到同一展示名（聚合 key 即展示名）
+const TYPE_SYNONYMS: Record<string, string> = {
+  '国产': '国产剧',
+  '大陆': '国产剧',
+  '内地': '国产剧',
+};
+
+// 基础归一：去空白、NFC、去片/剧/类后缀、小写
+function baseNormalizeType(type: string): string {
   let t = type.replace(/\s+/g, '').trim();
-  // Apply NFC unicode normalization
   t = t.normalize('NFC');
-  // Remove trailing 片/剧/类 suffix for grouping (e.g., "动作片" → "动作", "喜剧片" → "喜剧")
-  // But keep standalone names like "电影", "电视剧" etc.
   if (t.length > 2 && (t.endsWith('片') || t.endsWith('剧') || t.endsWith('类'))) {
     t = t.slice(0, -1);
   }
-  // Lowercase for English name normalization (e.g., "Action" vs "action")
-  t = t.toLowerCase();
-  return t;
+  return t.toLowerCase();
+}
+
+// 把原始类型映射到 {聚合 key, 展示名}；命中同义表的组用固定展示名
+function classifyTypeName(raw: string): { key: string; display: string } {
+  const base = baseNormalizeType(raw);
+  const canonical = TYPE_SYNONYMS[base];
+  if (canonical) return { key: canonical, display: canonical };
+  return { key: base, display: raw };
 }
 
 export function useTypeBadges<T extends { type_name?: string }>(videos: T[]) {
@@ -41,16 +50,17 @@ export function useTypeBadges<T extends { type_name?: string }>(videos: T[]) {
     videos.forEach(video => {
       if (video.type_name && video.type_name.trim()) {
         const raw = video.type_name.trim();
-        const normalized = normalizeTypeName(raw);
-        const existing = typeMap.get(normalized);
+        const { key, display } = classifyTypeName(raw);
+        const canonical = TYPE_SYNONYMS[baseNormalizeType(raw)];
+        const existing = typeMap.get(key);
         if (existing) {
           existing.count++;
-          // Prefer shorter display name (e.g., "动作" over "动作片")
-          if (raw.length < existing.display.length) {
+          // 同义组展示名固定；其余沿用较短展示名（如 "动作" 优于 "动作片"）
+          if (!canonical && raw.length < existing.display.length) {
             existing.display = raw;
           }
         } else {
-          typeMap.set(normalized, { display: raw, count: 1 });
+          typeMap.set(key, { display, count: 1 });
         }
       }
     });
@@ -68,12 +78,12 @@ export function useTypeBadges<T extends { type_name?: string }>(videos: T[]) {
     }
 
     // Build a set of normalized selected types
-    const normalizedSelected = new Set(
-      Array.from(selectedTypes).map(normalizeTypeName)
+    const selectedKeys = new Set(
+      Array.from(selectedTypes).map(t => classifyTypeName(t).key)
     );
 
     return videos.filter(video =>
-      video.type_name && normalizedSelected.has(normalizeTypeName(video.type_name.trim()))
+      video.type_name && selectedKeys.has(classifyTypeName(video.type_name.trim()).key)
     );
   }, [videos, selectedTypes]);
 
