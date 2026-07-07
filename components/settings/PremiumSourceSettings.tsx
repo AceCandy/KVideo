@@ -5,7 +5,6 @@ import { PREMIUM_SOURCES } from '@/lib/api/premium-sources';
 interface PremiumSourceSettingsProps {
     sources: VideoSource[];
     onSourcesChange: (sources: VideoSource[]) => void;
-    onRestoreDefaults: () => void;
     onAddSource: () => void;
     onEditSource?: (source: VideoSource) => void;
 }
@@ -13,7 +12,6 @@ interface PremiumSourceSettingsProps {
 export function PremiumSourceSettings({
     sources,
     onSourcesChange,
-    onRestoreDefaults,
     onAddSource,
     onEditSource,
 }: PremiumSourceSettingsProps) {
@@ -24,7 +22,6 @@ export function PremiumSourceSettings({
             sources={sources}
             defaultIds={PREMIUM_SOURCES.map(s => s.id)}
             onSourcesChange={onSourcesChange}
-            onRestoreDefaults={onRestoreDefaults}
             onAddSource={onAddSource}
             onEditSource={onEditSource}
         />

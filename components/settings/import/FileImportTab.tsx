@@ -31,8 +31,8 @@ export function FileImportTab({ onImport }: FileImportTabProps) {
                     setError('导入失败：文件格式无效');
                     setSuccess(false);
                 }
-            } catch (err) {
-                console.error(err);
+            } catch {
+                // 导入失败已通过 setError 在 UI 展示错误提示
                 setError('导入失败：无法读取文件或格式错误');
                 setSuccess(false);
             }

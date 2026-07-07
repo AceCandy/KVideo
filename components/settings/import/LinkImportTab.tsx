@@ -28,7 +28,6 @@ export function LinkImportTab({ onImport }: LinkImportTabProps) {
             const result = await fetchSourcesFromUrl(url);
             setPreview(result);
         } catch (err: unknown) {
-            console.error(err);
             setError(err instanceof Error ? err.message : '获取链接失败，请检查URL是否正确或是否存在跨域限制');
         } finally {
             setLoading(false);

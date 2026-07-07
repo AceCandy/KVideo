@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SourceManager } from '@/components/settings/SourceManager';
 import type { VideoSource } from '@/lib/types';
@@ -12,7 +12,6 @@ interface SourceSettingsPanelProps {
   sources: VideoSource[];
   defaultIds: string[];
   onSourcesChange: (sources: VideoSource[]) => void;
-  onRestoreDefaults?: () => void;
   onAddSource: () => void;
   onEditSource?: (source: VideoSource) => void;
 }
@@ -23,7 +22,6 @@ export function SourceSettingsPanel({
   sources,
   defaultIds,
   onSourcesChange,
-  onRestoreDefaults,
   onAddSource,
   onEditSource,
 }: SourceSettingsPanelProps) {
@@ -95,16 +93,6 @@ export function SourceSettingsPanel({
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             清空全部
           </button>
-          {onRestoreDefaults && (
-            <button
-              type="button"
-              onClick={onRestoreDefaults}
-              className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-2xl)] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-2 text-sm font-medium text-[var(--text-color)] shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow] duration-200 ease-out hover:border-[color-mix(in_srgb,var(--accent-color)_24%,var(--glass-border))] hover:bg-[var(--glass-hover)] hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-color)] cursor-pointer"
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-              恢复默认
-            </button>
-          )}
           <button
             type="button"
             onClick={onAddSource}

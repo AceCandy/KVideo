@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
     settingsStore,
-    getDefaultPremiumSources,
     type SearchDisplayMode,
     type ProxyMode,
     type LocaleOption,
@@ -14,7 +13,6 @@ import type { VideoSource } from '@/lib/types';
 export function usePremiumSettingsPage() {
     const [premiumSources, setPremiumSources] = useState<VideoSource[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isRestoreDefaultsDialogOpen, setIsRestoreDefaultsDialogOpen] = useState(false);
     const [editingSource, setEditingSource] = useState<VideoSource | null>(null);
 
     // Display settings (from premium mode settings store)
@@ -89,12 +87,6 @@ export function usePremiumSettingsPage() {
     const handleEditSource = (source: VideoSource) => {
         setEditingSource(source);
         setIsAddModalOpen(true);
-    };
-
-    const handleRestoreDefaults = () => {
-        const defaults = getDefaultPremiumSources();
-        handleSourcesChange(defaults);
-        setIsRestoreDefaultsDialogOpen(false);
     };
 
     // --- Premium mode settings helpers ---
@@ -176,13 +168,10 @@ export function usePremiumSettingsPage() {
     return {
         premiumSources,
         isAddModalOpen,
-        isRestoreDefaultsDialogOpen,
         setIsAddModalOpen,
-        setIsRestoreDefaultsDialogOpen,
         setEditingSource,
         handleSourcesChange,
         handleAddSource,
-        handleRestoreDefaults,
         editingSource,
         handleEditSource,
         // Display settings
