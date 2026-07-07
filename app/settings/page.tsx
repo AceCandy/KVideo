@@ -5,6 +5,7 @@ import { ExportModal } from '@/components/settings/ExportModal';
 import { ImportModal } from '@/components/settings/ImportModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SourceSettings } from '@/components/settings/SourceSettings';
+import { PremiumSourceSettings } from '@/components/settings/PremiumSourceSettings';
 import { SortSettings } from '@/components/settings/SortSettings';
 import { DataSettings } from '@/components/settings/DataSettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
@@ -15,6 +16,7 @@ import { AppVersionSettings } from '@/components/settings/AppVersionSettings';
 import { UserSourceSettings } from '@/components/settings/UserSourceSettings';
 import { UserDanmakuSettings } from '@/components/settings/UserDanmakuSettings';
 import { PermissionGate } from '@/components/PermissionGate';
+import { AdminGate } from '@/components/AdminGate';
 import { hasPermission } from '@/lib/store/auth-store';
 import { useSettingsPage } from './hooks/useSettingsPage';
 
@@ -48,6 +50,14 @@ export default function SettingsPage() {
     editingSource,
     handleEditSource,
     setEditingSource,
+    premiumSources,
+    isPremiumAddModalOpen,
+    setIsPremiumAddModalOpen,
+    setPremiumEditingSource,
+    handlePremiumSourcesChange,
+    handleAddPremiumSource,
+    premiumEditingSource,
+    handleEditPremiumSource,
     handleRealtimeLatencyChange,
     handleSearchDisplayModeChange,
     handleFullscreenTypeChange,
@@ -139,6 +149,19 @@ export default function SettingsPage() {
           />
         </PermissionGate>
 
+        {/* Premium Source Management（仅 admin / super_admin 可见可编辑） */}
+        <AdminGate fallback={null}>
+          <PremiumSourceSettings
+            sources={premiumSources}
+            onSourcesChange={handlePremiumSourcesChange}
+            onAddSource={() => {
+              setPremiumEditingSource(null);
+              setIsPremiumAddModalOpen(true);
+            }}
+            onEditSource={handleEditPremiumSource}
+          />
+        </AdminGate>
+
         {/* Sort Options */}
         <SortSettings
           sortBy={sortBy}
@@ -165,6 +188,17 @@ export default function SettingsPage() {
         onAdd={handleAddSource}
         existingIds={sources.map(s => s.id)}
         initialValues={editingSource}
+      />
+
+      <AddSourceModal
+        isOpen={isPremiumAddModalOpen}
+        onClose={() => {
+          setIsPremiumAddModalOpen(false);
+          setPremiumEditingSource(null);
+        }}
+        onAdd={handleAddPremiumSource}
+        existingIds={premiumSources.map(s => s.id)}
+        initialValues={premiumEditingSource}
       />
 
       <ExportModal

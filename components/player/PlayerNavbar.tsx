@@ -41,7 +41,7 @@ export function PlayerNavbar({ isPremium }: { isPremium?: boolean }) {
                     </div>
                     <div className="flex items-center gap-3">
                         <Link
-                            href={isPremium ? '/premium/settings' : '/settings'}
+                            href="/settings"
                             className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
                             aria-label="设置"
                         >

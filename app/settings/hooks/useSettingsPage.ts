@@ -25,6 +25,10 @@ export function useSettingsPage() {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
     const [editingSource, setEditingSource] = useState<VideoSource | null>(null);
+    // 高级源管理状态
+    const [premiumSources, setPremiumSources] = useState<VideoSource[]>([]);
+    const [isPremiumAddModalOpen, setIsPremiumAddModalOpen] = useState(false);
+    const [premiumEditingSource, setPremiumEditingSource] = useState<VideoSource | null>(null);
 
     // Display settings
     const [realtimeLatency, setRealtimeLatency] = useState(false);
@@ -49,6 +53,7 @@ export function useSettingsPage() {
         const syncFromStore = () => {
             const settings = settingsStore.getSettings();
             setSources(settings.sources || []);
+            setPremiumSources(settings.premiumSources || []);
             setSubscriptions(settings.subscriptions || []);
             setSortBy(settings.sortBy);
             setRealtimeLatency(settings.realtimeLatency);
@@ -93,6 +98,30 @@ export function useSettingsPage() {
     const handleEditSource = (source: VideoSource) => {
         setEditingSource(source);
         setIsAddModalOpen(true);
+    };
+
+    // 高级源管理 handler，写入主 store 的 premiumSources 字段
+    const handlePremiumSourcesChange = (newSources: VideoSource[]) => {
+        setPremiumSources(newSources);
+        const currentSettings = settingsStore.getSettings();
+        settingsStore.saveSettings({
+            ...currentSettings,
+            premiumSources: newSources,
+        });
+    };
+
+    const handleAddPremiumSource = (source: VideoSource) => {
+        const exists = premiumSources.some(s => s.id === source.id);
+        const updated = exists
+            ? premiumSources.map(s => s.id === source.id ? source : s)
+            : [...premiumSources, source];
+        handlePremiumSourcesChange(updated);
+        setPremiumEditingSource(null);
+    };
+
+    const handleEditPremiumSource = (source: VideoSource) => {
+        setPremiumEditingSource(source);
+        setIsPremiumAddModalOpen(true);
     };
 
     const handleSortChange = (newSort: SortOption) => {
@@ -387,6 +416,14 @@ export function useSettingsPage() {
         handleResetAll,
         editingSource,
         handleEditSource,
+        premiumSources,
+        isPremiumAddModalOpen,
+        setIsPremiumAddModalOpen,
+        setPremiumEditingSource,
+        handlePremiumSourcesChange,
+        handleAddPremiumSource,
+        premiumEditingSource,
+        handleEditPremiumSource,
         handleRealtimeLatencyChange,
         handleSearchDisplayModeChange,
         handleFullscreenTypeChange,

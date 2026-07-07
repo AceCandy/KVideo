@@ -22,15 +22,28 @@ favorites-store.ts
 history-store.ts
 iptv-store.ts
 search-history-store.ts
-settings-store.ts          # central app settings (player, search, danmaku, ...)
+settings-store.ts          # central app settings (player, search, danmaku, sources, ...)
 user-sources-store.ts
-premium-mode-settings.ts   # premium-mode overrides on top of settings-store
 settings-helpers.ts        # export/import helpers for settings + history
 ```
 
 Stores share a `profiledKey()` localStorage-key primitive from `lib/utils/profile-storage.ts`, so each store keys its persistence by user profile.
 
 Settings follow a typed `AppSettings` interface in `settings-store.ts`; the store exposes getters, setters, and React subscription hooks (`usePlayerSettings`, etc.).
+
+---
+
+## Settings Store
+
+Player and display preferences live in **one** store only: `settingsStore` (`AppSettings`, persisted to `kvideo-settings`). There is no premium-mode override store — the former `premium-mode-settings.ts` / `kvideo-premium-mode-settings` was removed and must not be reintroduced.
+
+- **Single entry**: the settings UI is one page, `/settings`. There is no `/premium/settings` route; both Navbar entries point to `/settings`.
+- **Add new preferences to `AppSettings`** — never spin up a mode-specific store for player/display preferences.
+- **Two source sections, one store**: `sources` (normal) and `premiumSources` (premium) both live in `settingsStore`. They render as two sections in `/settings` with *intentionally asymmetric* gating:
+  - Normal sources: `PermissionGate permission="source_management"` (`super_admin` only).
+  - Premium sources: `AdminGate fallback={null}` (`admin` + `super_admin`).
+  - Net effect: `admin` can edit premium sources but **not** normal sources. This is deliberate, not a bug.
+- **`isPremium` is a player concept, not a settings concept.** It only selects the source list (`premiumSources` vs `sources`), the history store, and is forwarded to child components / URL. It is **not** used to branch player preferences — `usePlayerSettings` reads `settingsStore` regardless of mode.
 
 ---
 
@@ -114,4 +127,5 @@ Rules:
 - Bubbling a ref up to the shell "just in case" (it belongs in its region).
 - Editing an effect's dependency array during an unrelated refactor.
 - Putting ephemeral UI state in a global store.
+- Recreating a mode-specific (e.g. "premium") override store for player/display preferences — add the field to `settingsStore.AppSettings` instead (see Settings Store).
 - Subscribing once in the shell and forwarding 13 props (let each child subscribe via the hook).

@@ -6,10 +6,6 @@ import {
     type AppSettings,
     type AdFilterMode,
 } from '@/lib/store/settings-store';
-import {
-    premiumModeSettingsStore,
-    type ModeSettings,
-} from '@/lib/store/premium-mode-settings';
 import { useRuntimeFeatures } from '@/components/RuntimeFeaturesProvider';
 
 interface PlayerSettingsSnapshot {
@@ -31,74 +27,53 @@ interface PlayerSettingsSnapshot {
     danmakuDisplayArea: number;
 }
 
-function getPlayerSettingsSnapshot(isPremium: boolean, mediaProxyEnabled: boolean): PlayerSettingsSnapshot {
+function getPlayerSettingsSnapshot(mediaProxyEnabled: boolean): PlayerSettingsSnapshot {
     const globalSettings = settingsStore.getSettings();
-    const modeSettings = isPremium ? premiumModeSettingsStore.getSettings() : globalSettings;
 
     return {
-        autoNextEpisode: modeSettings.autoNextEpisode,
-        autoSkipIntro: modeSettings.autoSkipIntro,
-        skipIntroSeconds: modeSettings.skipIntroSeconds,
-        autoSkipOutro: modeSettings.autoSkipOutro,
-        skipOutroSeconds: modeSettings.skipOutroSeconds,
-        showModeIndicator: modeSettings.showModeIndicator,
+        autoNextEpisode: globalSettings.autoNextEpisode,
+        autoSkipIntro: globalSettings.autoSkipIntro,
+        skipIntroSeconds: globalSettings.skipIntroSeconds,
+        autoSkipOutro: globalSettings.autoSkipOutro,
+        skipOutroSeconds: globalSettings.skipOutroSeconds,
+        showModeIndicator: globalSettings.showModeIndicator,
         adFilter: globalSettings.adFilter,
-        adFilterMode: modeSettings.adFilterMode,
+        adFilterMode: globalSettings.adFilterMode,
         adKeywords: globalSettings.adKeywords,
-        fullscreenType: modeSettings.fullscreenType,
-        proxyMode: mediaProxyEnabled ? modeSettings.proxyMode : 'none',
-        danmakuEnabled: modeSettings.danmakuEnabled,
-        danmakuApiUrl: modeSettings.danmakuApiUrl,
-        danmakuOpacity: modeSettings.danmakuOpacity,
-        danmakuFontSize: modeSettings.danmakuFontSize,
-        danmakuDisplayArea: modeSettings.danmakuDisplayArea,
+        fullscreenType: globalSettings.fullscreenType,
+        proxyMode: mediaProxyEnabled ? globalSettings.proxyMode : 'none',
+        danmakuEnabled: globalSettings.danmakuEnabled,
+        danmakuApiUrl: globalSettings.danmakuApiUrl,
+        danmakuOpacity: globalSettings.danmakuOpacity,
+        danmakuFontSize: globalSettings.danmakuFontSize,
+        danmakuDisplayArea: globalSettings.danmakuDisplayArea,
     };
 }
 
 /**
- * Hook to access and update player settings from the settings store
- * Provides reactive updates when settings change
+ * Hook to access and update player settings from the settings store.
+ * Provides reactive updates when settings change.
  */
 export function usePlayerSettings(isPremium: boolean = false) {
     const { mediaProxyEnabled } = useRuntimeFeatures();
-    const [settings, setSettings] = useState(() => getPlayerSettingsSnapshot(isPremium, mediaProxyEnabled));
+    const [settings, setSettings] = useState(() => getPlayerSettingsSnapshot(mediaProxyEnabled));
 
     // Subscribe to settings changes
     useEffect(() => {
         const syncSettings = () => {
-            setSettings(getPlayerSettingsSnapshot(isPremium, mediaProxyEnabled));
+            setSettings(getPlayerSettingsSnapshot(mediaProxyEnabled));
         };
 
-        const modeStore = isPremium ? premiumModeSettingsStore : settingsStore;
-        const unsubscribeModeStore = modeStore.subscribe(syncSettings);
-        const unsubscribeGlobalStore = isPremium ? settingsStore.subscribe(syncSettings) : null;
+        const unsubscribe = settingsStore.subscribe(syncSettings);
 
         syncSettings();
 
         return () => {
-            unsubscribeModeStore();
-            unsubscribeGlobalStore?.();
+            unsubscribe();
         };
-    }, [isPremium, mediaProxyEnabled]);
+    }, [mediaProxyEnabled]);
 
-    const updateModeSettings = useCallback((partial: Partial<ModeSettings>) => {
-        if (isPremium) {
-            const currentSettings = premiumModeSettingsStore.getSettings();
-            premiumModeSettingsStore.saveSettings({
-                ...currentSettings,
-                ...partial,
-            });
-            return;
-        }
-
-        const currentSettings = settingsStore.getSettings();
-        settingsStore.saveSettings({
-            ...currentSettings,
-            ...partial,
-        });
-    }, [isPremium]);
-
-    const updateGlobalSettings = useCallback((partial: Partial<AppSettings>) => {
+    const updateModeSettings = useCallback((partial: Partial<AppSettings>) => {
         const currentSettings = settingsStore.getSettings();
         settingsStore.saveSettings({
             ...currentSettings,
@@ -131,16 +106,16 @@ export function usePlayerSettings(isPremium: boolean = false) {
     }, [updateModeSettings]);
 
     const setAdFilter = useCallback((value: boolean) => {
-        updateGlobalSettings({ adFilter: value });
-    }, [updateGlobalSettings]);
+        updateModeSettings({ adFilter: value });
+    }, [updateModeSettings]);
 
     const setAdFilterMode = useCallback((value: AdFilterMode) => {
         updateModeSettings({ adFilterMode: value });
     }, [updateModeSettings]);
 
     const setAdKeywords = useCallback((value: string[]) => {
-        updateGlobalSettings({ adKeywords: value });
-    }, [updateGlobalSettings]);
+        updateModeSettings({ adKeywords: value });
+    }, [updateModeSettings]);
 
     const setFullscreenType = useCallback((value: 'auto' | 'native' | 'window') => {
         updateModeSettings({ fullscreenType: value });

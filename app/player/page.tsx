@@ -17,7 +17,6 @@ import { FavoritesSidebar } from '@/components/favorites/FavoritesSidebar';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { PlayerNavbar } from '@/components/player/PlayerNavbar';
 import { settingsStore } from '@/lib/store/settings-store';
-import { premiumModeSettingsStore } from '@/lib/store/premium-mode-settings';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { getSourceName } from '@/lib/utils/source-names';
 import { retrieveGroupedSources, storeGroupedSources } from '@/lib/utils/grouped-sources-cache';
@@ -47,8 +46,8 @@ function PlayerContent() {
   const gsKey = searchParams.get('gs');
   const missingRequiredParams = !videoId || !source;
 
-  // Track settings - use mode-specific store
-  const modeStore = isPremium ? premiumModeSettingsStore : settingsStore;
+  // Track settings - 统一使用主 store
+  const modeStore = settingsStore;
   const [isReversed, setIsReversed] = useState(() =>
     typeof window !== 'undefined' ? modeStore.getSettings().episodeReverseOrder : false
   );

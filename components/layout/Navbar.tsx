@@ -17,7 +17,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
-    const settingsHref = isPremiumMode ? '/premium/settings' : '/settings';
+    const settingsHref = '/settings';
     const favoritesHref = isPremiumMode ? '/premium/favorites' : '/favorites';
     const [session] = useState<AuthSession | null>(() => getSession());
     const { iptvEnabled } = useRuntimeFeatures();

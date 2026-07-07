@@ -15,7 +15,6 @@ import { useDanmaku } from './hooks/useDanmaku';
 import { useIsIOS, useIsMobile } from '@/lib/hooks/mobile/useDeviceDetection';
 import { useDoubleTap } from '@/lib/hooks/mobile/useDoubleTap';
 import { settingsStore, DEFAULT_SEEK_STEP_SECONDS } from '@/lib/store/settings-store';
-import { premiumModeSettingsStore } from '@/lib/store/premium-mode-settings';
 import './web-fullscreen.css';
 
 type WebFullscreenSize = 'full' | 'large' | 'focused';
@@ -176,7 +175,7 @@ export function DesktopVideoPlayer({
   }, [webFullscreenSize]);
 
   React.useEffect(() => {
-    const store = isPremium ? premiumModeSettingsStore : settingsStore;
+    const store = settingsStore;
 
     const syncSeekStep = () => {
       setSeekStepSeconds(store.getSettings().seekStepSeconds ?? DEFAULT_SEEK_STEP_SECONDS);
