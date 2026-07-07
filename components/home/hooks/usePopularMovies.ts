@@ -30,9 +30,14 @@ export function usePopularMovies(selectedTag: string, tags: any[], contentType: 
             if (!response.ok) throw new Error('Failed to fetch');
 
             const data = await response.json();
-            const newMovies = data.subjects || [];
+            const newMovies: DoubanMovie[] = data.subjects || [];
 
-            setMovies(prev => append ? [...prev, ...newMovies] : newMovies);
+            setMovies(prev => {
+                if (!append) return newMovies;
+                // 豆瓣接口跨页可能返回重复条目，按 id 去重避免列表累积重复项
+                const existingIds = new Set(prev.map(m => m.id));
+                return [...prev, ...newMovies.filter(m => !existingIds.has(m.id))];
+            });
             setHasMore(newMovies.length === PAGE_LIMIT);
         } catch (error) {
             console.error('Failed to load movies:', error);

@@ -3,6 +3,7 @@
  * Handles movie display and loading states
  */
 
+import { useMemo } from 'react';
 import { MovieCard } from './MovieCard';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { GridEmpty, GridLoading, GridNoMore, GridSkeleton } from '@/components/ui/GridState';
@@ -32,18 +33,28 @@ export function MovieGrid({
   prefetchRef,
   loadMoreRef
 }: MovieGridProps) {
-  if (movies.length === 0 && loading) {
+  // 豆瓣分页接口跨页可能返回重复条目，按 id 保序去重，保证列表项 key 唯一
+  const uniqueMovies = useMemo(() => {
+    const seen = new Set<string>();
+    return movies.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
+  }, [movies]);
+
+  if (uniqueMovies.length === 0 && loading) {
     return <GridSkeleton />;
   }
 
-  if (movies.length === 0 && !loading) {
+  if (uniqueMovies.length === 0 && !loading) {
     return <GridEmpty />;
   }
 
   return (
     <>
       <CardGrid className="stagger-fade">
-        {movies.map((movie) => (
+        {uniqueMovies.map((movie) => (
           <MovieCard
             key={movie.id}
             movie={movie}
@@ -62,7 +73,7 @@ export function MovieGrid({
       {hasMore && !loading && <div ref={loadMoreRef} className="h-20" />}
 
       {/* No More Content */}
-      {!hasMore && movies.length > 0 && <GridNoMore />}
+      {!hasMore && uniqueMovies.length > 0 && <GridNoMore />}
     </>
   );
 }
