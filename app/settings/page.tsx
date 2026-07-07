@@ -30,12 +30,10 @@ export default function SettingsPage() {
     isExportModalOpen,
     isImportModalOpen,
     isResetDialogOpen,
-    isRestoreDefaultsDialogOpen,
     setIsAddModalOpen,
     setIsExportModalOpen,
     setIsImportModalOpen,
     setIsResetDialogOpen,
-    setIsRestoreDefaultsDialogOpen,
     handleSourcesChange,
     handleAddSource,
     handleSortChange,
@@ -46,7 +44,6 @@ export default function SettingsPage() {
     handleAddSubscription,
     handleRemoveSubscription,
     handleRefreshSubscription,
-    handleRestoreDefaults,
     handleResetAll,
     editingSource,
     handleEditSource,
@@ -134,7 +131,6 @@ export default function SettingsPage() {
           <SourceSettings
             sources={sources}
             onSourcesChange={handleSourcesChange}
-            onRestoreDefaults={() => setIsRestoreDefaultsDialogOpen(true)}
             onAddSource={() => {
               setEditingSource(null);
               setIsAddModalOpen(true);
@@ -186,16 +182,6 @@ export default function SettingsPage() {
         onAddSubscription={handleAddSubscription}
         onRemoveSubscription={handleRemoveSubscription}
         onRefreshSubscription={handleRefreshSubscription}
-      />
-
-      <ConfirmDialog
-        isOpen={isRestoreDefaultsDialogOpen}
-        title="恢复默认源"
-        message="这将重置所有视频源为默认配置。自定义源将被删除。是否继续？"
-        confirmText="恢复"
-        cancelText="取消"
-        onConfirm={handleRestoreDefaults}
-        onCancel={() => setIsRestoreDefaultsDialogOpen(false)}
       />
 
       <ConfirmDialog

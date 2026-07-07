@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
     settingsStore,
-    getDefaultSources,
     type SortOption,
     type SearchDisplayMode,
     type ProxyMode,
@@ -25,7 +24,6 @@ export function useSettingsPage() {
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-    const [isRestoreDefaultsDialogOpen, setIsRestoreDefaultsDialogOpen] = useState(false);
     const [editingSource, setEditingSource] = useState<VideoSource | null>(null);
 
     // Display settings
@@ -170,8 +168,8 @@ export function useSettingsPage() {
             }
 
             return true;
-        } catch (e) {
-            console.error("Import error:", e);
+        } catch {
+            // 导入失败已由调用方在 UI 展示错误提示
             return false;
         }
     };
@@ -196,8 +194,8 @@ export function useSettingsPage() {
             });
 
             return true;
-        } catch (e) {
-            console.error(e);
+        } catch {
+            // 前端表单已展示错误提示，无需再打印日志
             throw new Error('无法连接到订阅链接或格式错误');
         }
     };
@@ -229,9 +227,8 @@ export function useSettingsPage() {
                 ...currentSettings,
                 subscriptions: updatedSubscriptions
             });
-        } catch (e) {
-            console.error(e);
-            // Optionally notify user of failure
+        } catch {
+            // 刷新单个订阅失败不阻断其他操作，静默处理
         }
     };
 
@@ -354,12 +351,6 @@ export function useSettingsPage() {
         });
     };
 
-    const handleRestoreDefaults = () => {
-        const defaults = getDefaultSources();
-        handleSourcesChange(defaults);
-        setIsRestoreDefaultsDialogOpen(false);
-    };
-
     const handleResetAll = () => {
         settingsStore.resetToDefaults();
         setIsResetDialogOpen(false);
@@ -379,12 +370,10 @@ export function useSettingsPage() {
         isExportModalOpen,
         isImportModalOpen,
         isResetDialogOpen,
-        isRestoreDefaultsDialogOpen,
         setIsAddModalOpen,
         setIsExportModalOpen,
         setIsImportModalOpen,
         setIsResetDialogOpen,
-        setIsRestoreDefaultsDialogOpen,
         setEditingSource,
         handleSourcesChange,
         handleAddSource,
@@ -395,7 +384,6 @@ export function useSettingsPage() {
         handleAddSubscription,
         handleRemoveSubscription,
         handleRefreshSubscription,
-        handleRestoreDefaults,
         handleResetAll,
         editingSource,
         handleEditSource,

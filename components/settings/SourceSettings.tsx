@@ -5,7 +5,6 @@ import { DEFAULT_SOURCES } from '@/lib/api/default-sources';
 interface SourceSettingsProps {
     sources: VideoSource[];
     onSourcesChange: (sources: VideoSource[]) => void;
-    onRestoreDefaults: () => void;
     onAddSource: () => void;
     onEditSource?: (source: VideoSource) => void;
 }
@@ -13,7 +12,6 @@ interface SourceSettingsProps {
 export function SourceSettings({
     sources,
     onSourcesChange,
-    onRestoreDefaults,
     onAddSource,
     onEditSource,
 }: SourceSettingsProps) {
@@ -24,7 +22,6 @@ export function SourceSettings({
             sources={sources}
             defaultIds={DEFAULT_SOURCES.map(s => s.id)}
             onSourcesChange={onSourcesChange}
-            onRestoreDefaults={onRestoreDefaults}
             onAddSource={onAddSource}
             onEditSource={onEditSource}
         />
