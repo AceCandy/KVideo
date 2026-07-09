@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect, useId, useMemo } from 'react';
 import Image from 'next/image';
 import { RefreshCw, Play, Star, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { useHistory } from '@/lib/store/history-store';
 import { useFavorites } from '@/lib/store/favorites-store';
+import { settingsStore } from '@/lib/store/settings-store';
 import { fetchGuessCandidates, type GuessMovie } from '@/lib/utils/guess';
 
 /**
@@ -25,6 +26,11 @@ export function GuessFavoriteModal({
     const titleId = useId();
     const { viewingHistory } = useHistory(isPremium);
     const { favorites } = useFavorites(isPremium);
+    // 高级区兜底用：今日推荐补充需要 premium 源列表
+    const premiumSources = useMemo(
+        () => (isPremium ? settingsStore.getSettings().premiumSources.filter(s => s.enabled) : []),
+        [isPremium]
+    );
     const [candidates, setCandidates] = useState<GuessMovie[]>([]);
     const [index, setIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -34,7 +40,7 @@ export function GuessFavoriteModal({
         let cancelled = false;
         const run = async () => {
             setLoading(true);
-            const list = await fetchGuessCandidates(viewingHistory, favorites);
+            const list = await fetchGuessCandidates(viewingHistory, favorites, { isPremium, premiumSources });
             if (cancelled) return;
             setCandidates(list);
             setIndex(0);
@@ -42,7 +48,7 @@ export function GuessFavoriteModal({
         };
         run();
         return () => { cancelled = true; };
-    }, [isOpen, viewingHistory, favorites]);
+    }, [isOpen, viewingHistory, favorites, isPremium, premiumSources]);
 
     const current = candidates[index];
 

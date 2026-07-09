@@ -15,8 +15,9 @@
  * - hasHistory = true when viewingHistory.length >= 2
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useHistoryStore, usePremiumHistoryStore } from '@/lib/store/history-store';
+import { useFavorites } from '@/lib/store/favorites-store';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import {
   generateRecommendations,
@@ -45,6 +46,12 @@ export function usePersonalizedRecommendations(isPremium = false) {
   const normalHistory = useHistoryStore();
   const premiumHistory = usePremiumHistoryStore();
   const { viewingHistory } = isPremium ? premiumHistory : normalHistory;
+  const { favorites } = useFavorites(isPremium);
+  // 已收藏标题集合：推荐需同时剔除已看与已收藏
+  const favoriteTitles = useMemo(
+    () => new Set(favorites.map(f => f.title?.toLowerCase().trim()).filter(Boolean)),
+    [favorites]
+  );
 
   const [movies, setMovies] = useState<InterleavedMovie[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,7 +84,7 @@ export function usePersonalizedRecommendations(isPremium = false) {
           );
           if (!res.ok) return { label: query.label, movies: [] as DoubanMovie[] };
           const data = await res.json();
-          const movies: DoubanMovie[] = (data.subjects || []).map((s: any) => ({
+          const movies: DoubanMovie[] = (data.subjects || []).map((s: DoubanMovie) => ({
             id: s.id,
             title: s.title,
             cover: s.cover,
@@ -122,7 +129,11 @@ export function usePersonalizedRecommendations(isPremium = false) {
       cacheRef.current.key === cacheKey &&
       Date.now() - cacheRef.current.timestamp < CACHE_DURATION
     ) {
-      setMovies(cacheRef.current.movies);
+      // 命中缓存时也要按当前已收藏再过滤一遍（收藏变化会重跑本 effect）
+      const cachedFiltered = cacheRef.current.movies.filter(
+        m => !favoriteTitles.has(m.title.toLowerCase().trim())
+      );
+      setMovies(cachedFiltered);
       // Rebuild seen titles from cache
       for (const m of cacheRef.current.movies) {
         allSeenTitlesRef.current.add(m.title.toLowerCase().trim());
@@ -138,6 +149,7 @@ export function usePersonalizedRecommendations(isPremium = false) {
     setHasMore(true);
 
     const watchedTitles = getWatchedTitles(viewingHistory);
+    favoriteTitles.forEach(t => watchedTitles.add(t));
 
     fetchPage(queries, 0, watchedTitles).then((interleaved) => {
       if (cancelled) return;
@@ -159,7 +171,7 @@ export function usePersonalizedRecommendations(isPremium = false) {
     });
 
     return () => { cancelled = true; };
-  }, [viewingHistory.length, fetchPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewingHistory.length, fetchPage, favoriteTitles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load more via infinite scroll
   const handleLoadMore = useCallback(async (nextPage: number) => {
@@ -168,6 +180,7 @@ export function usePersonalizedRecommendations(isPremium = false) {
 
     setLoading(true);
     const watchedTitles = getWatchedTitles(viewingHistory);
+    favoriteTitles.forEach(t => watchedTitles.add(t));
 
     try {
       const newMovies = await fetchPage(queries, nextPage, watchedTitles);
@@ -226,7 +239,7 @@ export function usePersonalizedRecommendations(isPremium = false) {
     } finally {
       setLoading(false);
     }
-  }, [loading, viewingHistory, fetchPage]);
+  }, [loading, viewingHistory, fetchPage, favoriteTitles]);
 
   const { prefetchRef, loadMoreRef } = useInfiniteScroll({
     hasMore,
