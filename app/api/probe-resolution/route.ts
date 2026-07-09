@@ -177,6 +177,16 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
+        // 客户端中途 abort 会让 controller 进入关闭态，此时再 enqueue/close 会抛
+        // aborted / ECONNRESET。统一收口：流已关闭时静默忽略，避免冒泡成 uncaughtException。
+        const safeEnqueue = (chunk: string) => {
+          try {
+            controller.enqueue(encoder.encode(chunk));
+          } catch {
+            // 流已被客户端取消，忽略。
+          }
+        };
+
         // Process in parallel with concurrency limit
         const CONCURRENCY = 6;
         let index = 0;
@@ -186,19 +196,22 @@ export async function POST(request: NextRequest) {
             const current = batch[index++];
             try {
               const result = await probeOne(current, sourceConfigs);
-              const line = `data: ${JSON.stringify(result)}\n\n`;
-              controller.enqueue(encoder.encode(line));
+              safeEnqueue(`data: ${JSON.stringify(result)}\n\n`);
             } catch {
               const fallback = { id: current.id, source: current.source, resolution: null, resolutionOrigin: 'manifest' };
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(fallback)}\n\n`));
+              safeEnqueue(`data: ${JSON.stringify(fallback)}\n\n`);
             }
           }
         }
 
         const workers = Array.from({ length: Math.min(CONCURRENCY, batch.length) }, () => processNext());
         await Promise.all(workers);
-        controller.enqueue(encoder.encode('data: {"done":true}\n\n'));
-        controller.close();
+        safeEnqueue('data: {"done":true}\n\n');
+        try {
+          controller.close();
+        } catch {
+          // 流已取消，忽略。
+        }
       },
     });
 
