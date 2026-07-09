@@ -15,7 +15,7 @@ import {
  *
  * 任何判定异常默认放行（fail-open），优先保证源可用性；精细角色判断仍由各路由自理。
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // 仅保护 API 层；页面交给 PasswordGate
