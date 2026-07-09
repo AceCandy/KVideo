@@ -12,9 +12,9 @@ const PREMIUM_UNLOCK_KEY = 'kvideo-premium-unlocked';
 /**
  * 右上角用户入口与下拉菜单。
  * 登录态显示头像 + 昵称（+ 管理员徽章），未登录显示占位图标，保证两类用户都能进入设置 / 切换明暗。
- * 菜单项：设置、高级专区（仅已解锁 / 管理员可见）、切换明暗、退出登录（仅登录态）。
+ * 菜单项：设置、高级专区（普通区，仅已解锁 / 管理员可见）/ 返回普通区（高级区）、切换明暗、退出登录（仅登录态）。
  */
-export function UserMenu() {
+export function UserMenu({ isPremiumMode = false }: { isPremiumMode?: boolean }) {
     const [open, setOpen] = useState(false);
     const [session] = useState(() => getSession());
     // 挂载时读取高级专区解锁态；解锁发生在 /premium 页，回到本菜单重新挂载时即读到最新值
@@ -60,6 +60,11 @@ export function UserMenu() {
         window.location.href = '/premium';
     };
 
+    const goHome = () => {
+        setOpen(false);
+        window.location.href = '/';
+    };
+
     return (
         <div className="relative" ref={ref}>
             <button
@@ -94,14 +99,14 @@ export function UserMenu() {
                             <Settings size={16} />
                             设置
                         </Link>
-                        {canEnterPremium && (
+                        {(canEnterPremium || isPremiumMode) && (
                             <button
-                                onClick={goPremium}
+                                onClick={isPremiumMode ? goHome : goPremium}
                                 role="menuitem"
                                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-amber-400 hover:bg-amber-500/10 transition-colors"
                             >
                                 <Crown size={16} />
-                                高级专区
+                                {isPremiumMode ? '返回普通区' : '高级专区'}
                             </button>
                         )}
                         <button

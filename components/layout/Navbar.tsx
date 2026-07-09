@@ -23,6 +23,7 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
     const [guessOpen, setGuessOpen] = useState(false);
 
     return (
+        <>
         <nav className="sticky top-0 z-[2000] pt-4 pb-2" style={{
             transform: 'translate3d(0, 0, 0)',
             willChange: 'transform'
@@ -78,13 +79,15 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
                                 <Sparkles size={18} className="sm:w-5 sm:h-5" />
                             </button>
 
-                            <UserMenu />
+                            <UserMenu isPremiumMode={isPremiumMode} />
                         </div>
                     </div>
                 </div>
             </div>
-
-            <GuessFavoriteModal isOpen={guessOpen} onClose={() => setGuessOpen(false)} />
         </nav>
+
+        {/* Modal 放在带 transform 的 nav 之外，避免 fixed 定位被导航条包含块困住 */}
+        <GuessFavoriteModal isOpen={guessOpen} onClose={() => setGuessOpen(false)} isPremium={isPremiumMode} />
+        </>
     );
 }

@@ -4,18 +4,27 @@ import { useState, useEffect, useId } from 'react';
 import Image from 'next/image';
 import { RefreshCw, Play, Star, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import { useHistoryStore } from '@/lib/store/history-store';
+import { useHistory } from '@/lib/store/history-store';
 import { useFavorites } from '@/lib/store/favorites-store';
 import { fetchGuessCandidates, type GuessMovie } from '@/lib/utils/guess';
 
 /**
  * 猜你想看弹窗：基于观看历史与收藏挑选一部推荐影片，
- * 支持「换一部」（同批候选内随机换）与「立即观看」（跳首页搜索该影片）。
+ * 支持「换一部」（同批候选内随机换）与「立即观看」（跳对应区搜索该影片）。
+ * isPremium 决定使用普通区还是高级区的历史 / 收藏，以及跳转目标。
  */
-export function GuessFavoriteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function GuessFavoriteModal({
+    isOpen,
+    onClose,
+    isPremium = false,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    isPremium?: boolean;
+}) {
     const titleId = useId();
-    const { viewingHistory } = useHistoryStore();
-    const { favorites } = useFavorites(false);
+    const { viewingHistory } = useHistory(isPremium);
+    const { favorites } = useFavorites(isPremium);
     const [candidates, setCandidates] = useState<GuessMovie[]>([]);
     const [index, setIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -47,7 +56,7 @@ export function GuessFavoriteModal({ isOpen, onClose }: { isOpen: boolean; onClo
     const watch = () => {
         if (!current) return;
         onClose();
-        window.location.href = `/?q=${encodeURIComponent(current.title)}`;
+        window.location.href = `${isPremium ? '/premium' : '/'}?q=${encodeURIComponent(current.title)}`;
     };
 
     return (
