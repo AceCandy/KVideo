@@ -6,12 +6,20 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TagManager } from './TagManager';
 import { MovieGrid } from './MovieGrid';
 import { useTagManager } from './hooks/useTagManager';
 import { usePopularMovies } from './hooks/usePopularMovies';
 import { usePersonalizedRecommendations } from './hooks/usePersonalizedRecommendations';
+
+interface DoubanMovie {
+  id: string;
+  title: string;
+  cover: string;
+  rate: string;
+  url: string;
+}
 
 interface PopularFeaturesProps {
   onSearch?: (query: string) => void;
@@ -46,22 +54,14 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
     loadMoreRef: recommendLoadMoreRef,
   } = usePersonalizedRecommendations(false);
 
-  // Track whether the recommendation tab is active
-  const [isRecommendSelected, setIsRecommendSelected] = useState(hasHistory);
-
-  // Sync selection when hasHistory changes after Zustand hydration from localStorage.
-  // On first render the store is empty (hasHistory=false), so useState captures false.
-  // Once hydration completes and hasHistory becomes true, auto-select the recommendation tab.
-  useEffect(() => {
-    if (hasHistory) {
-      setIsRecommendSelected(true);
-    }
-  }, [hasHistory]);
+  // 用户对"为你推荐"的选择：null 表示未手动操作（有推荐内容时默认展示推荐），
+  // 'recommend' / 'normal' 记录显式选择。用派生值替代 hydration effect，避免同步 setState。
+  const [userSelected, setUserSelected] = useState<'recommend' | 'normal' | null>(null);
 
   // 推荐查询为空（如历史缺少 type_name/vod_actor/vod_area 字段，生成 0 条查询）时
   // 隐藏"为你推荐"入口；加载中先保留以避免首屏闪烁。
   const showRecommendTag = hasHistory && (recommendLoading || recommendMovies.length > 0);
-  const effectiveRecommendSelected = showRecommendTag && isRecommendSelected;
+  const effectiveRecommendSelected = showRecommendTag && userSelected !== 'normal';
 
   const {
     movies,
@@ -75,14 +75,14 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
     contentType
   );
 
-  const handleMovieClick = (movie: any) => {
+  const handleMovieClick = (movie: DoubanMovie) => {
     if (onSearch) {
       onSearch(movie.title);
     }
   };
 
   const handleRecommendSelect = () => {
-    setIsRecommendSelected(true);
+    setUserSelected('recommend');
   };
 
   const handleRegularTagSelect = (tagId: string) => {
@@ -90,7 +90,7 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
       window.location.href = '/premium';
       return;
     }
-    setIsRecommendSelected(false);
+    setUserSelected('normal');
     setSelectedTag(tagId);
   };
 
