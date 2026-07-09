@@ -58,7 +58,10 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
     }
   }, [hasHistory]);
 
-  const effectiveRecommendSelected = hasHistory && isRecommendSelected;
+  // 推荐查询为空（如历史缺少 type_name/vod_actor/vod_area 字段，生成 0 条查询）时
+  // 隐藏"为你推荐"入口；加载中先保留以避免首屏闪烁。
+  const showRecommendTag = hasHistory && (recommendLoading || recommendMovies.length > 0);
+  const effectiveRecommendSelected = showRecommendTag && isRecommendSelected;
 
   const {
     movies,
@@ -138,7 +141,7 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
         onDragEnd={handleDragEnd}
         onJustAddedTagHandled={() => setJustAddedTag(false)}
         isLoadingTags={isLoadingTags}
-        recommendTag={hasHistory ? {
+        recommendTag={showRecommendTag ? {
           label: '为你推荐',
           isSelected: effectiveRecommendSelected,
           onSelect: handleRecommendSelect,
