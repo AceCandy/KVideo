@@ -2,20 +2,30 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { User, Settings, Sun, Moon, LogOut } from 'lucide-react';
+import { User, Settings, Crown, Sun, Moon, LogOut } from 'lucide-react';
 import { getSession, clearSession } from '@/lib/store/auth-store';
 import { useTheme } from '@/components/ThemeProvider';
+
+// 与 PremiumPasswordGate 共用的解锁态 key
+const PREMIUM_UNLOCK_KEY = 'kvideo-premium-unlocked';
 
 /**
  * 右上角用户入口与下拉菜单。
  * 登录态显示头像 + 昵称（+ 管理员徽章），未登录显示占位图标，保证两类用户都能进入设置 / 切换明暗。
- * 菜单项：设置、切换明暗、退出登录（仅登录态）。
+ * 菜单项：设置、高级专区（仅已解锁 / 管理员可见）、切换明暗、退出登录（仅登录态）。
  */
 export function UserMenu() {
     const [open, setOpen] = useState(false);
     const [session] = useState(() => getSession());
+    // 挂载时读取高级专区解锁态；解锁发生在 /premium 页，回到本菜单重新挂载时即读到最新值
+    const [premiumUnlocked] = useState(
+        () => typeof window !== 'undefined' && window.sessionStorage.getItem(PREMIUM_UNLOCK_KEY) === 'true'
+    );
     const ref = useRef<HTMLDivElement>(null);
     const { actualTheme, setTheme } = useTheme();
+
+    const isAdmin = !!session && (session.role === 'admin' || session.role === 'super_admin');
+    const canEnterPremium = premiumUnlocked || isAdmin;
 
     // 点击菜单外部关闭
     useEffect(() => {
@@ -45,7 +55,10 @@ export function UserMenu() {
         setOpen(false);
     };
 
-    const isAdmin = !!session && (session.role === 'admin' || session.role === 'super_admin');
+    const goPremium = () => {
+        setOpen(false);
+        window.location.href = '/premium';
+    };
 
     return (
         <div className="relative" ref={ref}>
@@ -81,6 +94,16 @@ export function UserMenu() {
                             <Settings size={16} />
                             设置
                         </Link>
+                        {canEnterPremium && (
+                            <button
+                                onClick={goPremium}
+                                role="menuitem"
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-amber-400 hover:bg-amber-500/10 transition-colors"
+                            >
+                                <Crown size={16} />
+                                高级专区
+                            </button>
+                        )}
                         <button
                             onClick={toggleTheme}
                             role="menuitem"

@@ -15,7 +15,6 @@ interface NavbarProps {
 }
 
 export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
-    const favoritesHref = isPremiumMode ? '/premium/favorites' : '/favorites';
     const { iptvEnabled } = useRuntimeFeatures();
     const siteIconSrc = useSiteIcon();
 
@@ -65,14 +64,6 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
                             </Link>
                             )}
 
-                            <Link
-                                href={favoritesHref}
-                                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
-                                aria-label="我的收藏"
-                                data-focusable
-                            >
-                                <Icons.Heart size={20} />
-                            </Link>
                             <UserMenu />
                         </div>
                     </div>
