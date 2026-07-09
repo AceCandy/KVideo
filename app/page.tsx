@@ -4,6 +4,7 @@ import { Suspense, useMemo } from 'react';
 import { SearchForm } from '@/components/search/SearchForm';
 import { NoResults } from '@/components/search/NoResults';
 import { PopularFeatures } from '@/components/home/PopularFeatures';
+import { PremiumSwitchButton } from '@/components/home/PremiumSwitchButton';
 import { FavoritesSidebar } from '@/components/favorites/FavoritesSidebar';
 import { Navbar } from '@/components/layout/Navbar';
 import { SearchResults } from '@/components/home/SearchResults';
@@ -59,6 +60,11 @@ function HomePage() {
           checkedSources={completedSources}
           totalSources={totalSources}
         />
+      </div>
+
+      {/* Premium Switch - 仅对已解锁 / 管理员用户启用 */}
+      <div className="max-w-7xl mx-auto px-4 mb-6 flex justify-center">
+        <PremiumSwitchButton />
       </div>
 
       {/* Main Content */}
