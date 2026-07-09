@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Sparkles } from 'lucide-react';
 import { useSiteIcon } from '@/components/SiteIconProvider';
 import { Icons } from '@/components/ui/Icon';
 import { siteConfig } from '@/lib/config/site-config';
 import { hasPermission } from '@/lib/store/auth-store';
 import { useRuntimeFeatures } from '@/components/RuntimeFeaturesProvider';
 import { UserMenu } from '@/components/layout/UserMenu';
+import { GuessFavoriteModal } from '@/components/layout/GuessFavoriteModal';
 
 interface NavbarProps {
     onReset: () => void;
@@ -17,6 +20,7 @@ interface NavbarProps {
 export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
     const { iptvEnabled } = useRuntimeFeatures();
     const siteIconSrc = useSiteIcon();
+    const [guessOpen, setGuessOpen] = useState(false);
 
     return (
         <nav className="sticky top-0 z-[2000] pt-4 pb-2" style={{
@@ -64,11 +68,23 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
                             </Link>
                             )}
 
+                            {/* 猜你想看：基于观看历史推荐一部 */}
+                            <button
+                                onClick={() => setGuessOpen(true)}
+                                aria-label="猜你想看"
+                                title="猜你想看"
+                                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
+                            >
+                                <Sparkles size={18} className="sm:w-5 sm:h-5" />
+                            </button>
+
                             <UserMenu />
                         </div>
                     </div>
                 </div>
             </div>
+
+            <GuessFavoriteModal isOpen={guessOpen} onClose={() => setGuessOpen(false)} />
         </nav>
     );
 }

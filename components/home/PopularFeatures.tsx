@@ -1,17 +1,14 @@
 /**
  * PopularFeatures - Main component for popular movies section
  * Displays Douban movie recommendations with tag filtering and infinite scroll.
- * Includes personalized "为你推荐" tag when user has 2+ watched items.
  */
 
 'use client';
 
-import { useState } from 'react';
 import { TagManager } from './TagManager';
 import { MovieGrid } from './MovieGrid';
 import { useTagManager } from './hooks/useTagManager';
 import { usePopularMovies } from './hooks/usePopularMovies';
-import { usePersonalizedRecommendations } from './hooks/usePersonalizedRecommendations';
 
 interface DoubanMovie {
   id: string;
@@ -46,34 +43,12 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
   } = useTagManager();
 
   const {
-    movies: recommendMovies,
-    loading: recommendLoading,
-    hasMore: recommendHasMore,
-    hasHistory,
-    prefetchRef: recommendPrefetchRef,
-    loadMoreRef: recommendLoadMoreRef,
-  } = usePersonalizedRecommendations(false);
-
-  // 用户对"为你推荐"的选择：null 表示未手动操作（有推荐内容时默认展示推荐），
-  // 'recommend' / 'normal' 记录显式选择。用派生值替代 hydration effect，避免同步 setState。
-  const [userSelected, setUserSelected] = useState<'recommend' | 'normal' | null>(null);
-
-  // 推荐查询为空（如历史缺少 type_name/vod_actor/vod_area 字段，生成 0 条查询）时
-  // 隐藏"为你推荐"入口；加载中先保留以避免首屏闪烁。
-  const showRecommendTag = hasHistory && (recommendLoading || recommendMovies.length > 0);
-  const effectiveRecommendSelected = showRecommendTag && userSelected !== 'normal';
-
-  const {
     movies,
     loading,
     hasMore,
     prefetchRef,
     loadMoreRef,
-  } = usePopularMovies(
-    effectiveRecommendSelected ? '' : selectedTag,
-    tags,
-    contentType
-  );
+  } = usePopularMovies(selectedTag, tags, contentType);
 
   const handleMovieClick = (movie: DoubanMovie) => {
     if (onSearch) {
@@ -81,54 +56,45 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
     }
   };
 
-  const handleRecommendSelect = () => {
-    setUserSelected('recommend');
-  };
-
   const handleRegularTagSelect = (tagId: string) => {
     if (tagId === 'custom_高级' || tags.find(t => t.id === tagId)?.label === '高级') {
       window.location.href = '/premium';
       return;
     }
-    setUserSelected('normal');
     setSelectedTag(tagId);
   };
 
   return (
     <div className="animate-fade-in">
       {/* Content Type Toggle (Capsule Liquid Glass - Fixed & Centered) */}
-      {!effectiveRecommendSelected && (
-        <div className="mb-10 flex justify-center">
-          <div className="relative w-80 p-1 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-full grid grid-cols-2 backdrop-blur-2xl shadow-lg ring-1 ring-white/10 overflow-hidden">
-            {/* Sliding Indicator */}
-            <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--accent-color)] rounded-full transition-transform duration-300 shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.4)]"
-              style={{
-                transform: `translateX(${contentType === 'movie' ? '4px' : 'calc(100% + 4px)'})`,
-              }}
-            />
+      <div className="mb-10 flex justify-center">
+        <div className="relative w-80 p-1 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-full grid grid-cols-2 backdrop-blur-2xl shadow-lg ring-1 ring-white/10 overflow-hidden">
+          {/* Sliding Indicator */}
+          <div
+            className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--accent-color)] rounded-full transition-transform duration-300 shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.4)]"
+            style={{
+              transform: `translateX(${contentType === 'movie' ? '4px' : 'calc(100% + 4px)'})`,
+            }}
+          />
 
-            <button
-              onClick={() => setContentType('movie')}
-              className={`relative z-10 py-2.5 text-sm font-bold transition-colors duration-300 cursor-pointer flex justify-center items-center ${contentType === 'movie' ? 'text-white' : 'text-[var(--text-color-secondary)] hover:text-[var(--text-color)]'
-                }`}
-            >
-              电影
-            </button>
-            <button
-              onClick={() => setContentType('tv')}
-              className={`relative z-10 py-2.5 text-sm font-bold transition-colors duration-300 cursor-pointer flex justify-center items-center ${contentType === 'tv' ? 'text-white' : 'text-[var(--text-color-secondary)] hover:text-[var(--text-color)]'
-                }`}
-            >
-              电视剧
-            </button>
-          </div>
+          <button
+            onClick={() => setContentType('movie')}
+            className={`relative z-10 py-2.5 text-sm font-bold transition-colors duration-300 cursor-pointer flex justify-center items-center ${contentType === 'movie' ? 'text-white' : 'text-[var(--text-color-secondary)] hover:text-[var(--text-color)]'}`}
+          >
+            电影
+          </button>
+          <button
+            onClick={() => setContentType('tv')}
+            className={`relative z-10 py-2.5 text-sm font-bold transition-colors duration-300 cursor-pointer flex justify-center items-center ${contentType === 'tv' ? 'text-white' : 'text-[var(--text-color-secondary)] hover:text-[var(--text-color)]'}`}
+          >
+            电视剧
+          </button>
         </div>
-      )}
+      </div>
 
       <TagManager
         tags={tags}
-        selectedTag={effectiveRecommendSelected ? '' : selectedTag}
+        selectedTag={selectedTag}
         showTagManager={showTagManager}
         newTagInput={newTagInput}
         justAddedTag={justAddedTag}
@@ -141,32 +107,16 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
         onDragEnd={handleDragEnd}
         onJustAddedTagHandled={() => setJustAddedTag(false)}
         isLoadingTags={isLoadingTags}
-        recommendTag={showRecommendTag ? {
-          label: '为你推荐',
-          isSelected: effectiveRecommendSelected,
-          onSelect: handleRecommendSelect,
-        } : undefined}
       />
 
-      {effectiveRecommendSelected ? (
-        <MovieGrid
-          movies={recommendMovies}
-          loading={recommendLoading}
-          hasMore={recommendHasMore}
-          onMovieClick={handleMovieClick}
-          prefetchRef={recommendPrefetchRef}
-          loadMoreRef={recommendLoadMoreRef}
-        />
-      ) : (
-        <MovieGrid
-          movies={movies}
-          loading={loading}
-          hasMore={hasMore}
-          onMovieClick={handleMovieClick}
-          prefetchRef={prefetchRef}
-          loadMoreRef={loadMoreRef}
-        />
-      )}
+      <MovieGrid
+        movies={movies}
+        loading={loading}
+        hasMore={hasMore}
+        onMovieClick={handleMovieClick}
+        prefetchRef={prefetchRef}
+        loadMoreRef={loadMoreRef}
+      />
     </div>
   );
 }
