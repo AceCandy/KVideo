@@ -72,7 +72,7 @@ export function UserMenu({ isPremiumMode = false }: { isPremiumMode?: boolean })
                 aria-label="用户菜单"
                 aria-expanded={open}
                 aria-haspopup="menu"
-                className="flex items-center gap-1.5 pl-1.5 pr-2 sm:pr-2.5 py-1 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
+                className="flex items-center gap-1.5 min-w-[44px] min-h-[44px] pl-1.5 pr-2 sm:pr-2.5 py-1 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
             >
                 <div className="w-6 h-6 rounded-full bg-[var(--accent-color)]/10 flex items-center justify-center text-[var(--accent-color)] font-bold text-[11px] border border-[var(--glass-border)]">
                     {session ? session.name.charAt(0).toUpperCase() : <User size={14} />}
@@ -88,7 +88,7 @@ export function UserMenu({ isPremiumMode = false }: { isPremiumMode?: boolean })
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-44 z-[3000]">
+                <div className="absolute right-0 top-full mt-2 w-44 z-[var(--z-dropdown)]">
                     <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-md)] py-1 overflow-hidden" role="menu">
                         <Link
                             href="/settings"

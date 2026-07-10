@@ -29,8 +29,6 @@ export const LatencyBadge = memo(function LatencyBadge({ latency, className = ''
         backgroundColor: `${info.color}30`,
         borderColor: info.color,
         color: info.color,
-        willChange: 'auto',
-        transform: 'translate3d(0,0,0)',
       }}
       title={`Response time: ${info.label} (${info.level})`}
       aria-label={`Latency: ${info.label}`}

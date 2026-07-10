@@ -141,10 +141,6 @@ nav:where(.sticky, .fixed),
     }
 }
 
-img {
-    transform: translateZ(0);
-}
-
 body.scrolling * {
     pointer-events: none !important;
 }

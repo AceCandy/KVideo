@@ -24,9 +24,8 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
 
     return (
         <>
-        <nav className="sticky top-0 z-[2000] pt-4 pb-2" style={{
-            transform: 'translate3d(0, 0, 0)',
-            willChange: 'transform'
+        <nav className="sticky top-0 z-[var(--z-sticky)] pt-4 pb-2" style={{
+            transform: 'translate3d(0, 0, 0)'
         }}>
             <div className="max-w-7xl mx-auto px-4">
                 <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] shadow-[var(--shadow-sm)] px-3 sm:px-6 py-2 sm:py-4 rounded-[var(--radius-2xl)]" style={{
@@ -60,7 +59,7 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
                             {iptvEnabled && hasPermission('iptv_access') && (
                             <Link
                                 href="/iptv"
-                                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
+                                className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
                                 aria-label="直播"
                                 title="直播"
                                 data-focusable
@@ -74,7 +73,7 @@ export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
                                 onClick={() => setGuessOpen(true)}
                                 aria-label="猜你想看"
                                 title="猜你想看"
-                                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
+                                className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer"
                             >
                                 <Sparkles size={18} className="sm:w-5 sm:h-5" />
                             </button>

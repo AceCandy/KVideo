@@ -152,9 +152,6 @@ export const VideoGroupCard = memo<VideoGroupCardProps>(({
                     <div
                         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${isActive ? 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100' : 'opacity-0 lg:group-hover:opacity-100'
                             }`}
-                        style={{
-                            willChange: 'opacity',
-                        }}
                     >
                         <div className="absolute bottom-0 left-0 right-0 p-3">
                             {isActive && (

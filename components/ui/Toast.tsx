@@ -103,7 +103,7 @@ export function ToastViewport() {
     return (
         <div
             aria-live="off"
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col gap-2 w-[90%] max-w-sm pointer-events-none"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[var(--z-toast)] flex flex-col gap-2 w-[90%] max-w-sm pointer-events-none"
         >
             {toasts.map((t) => (
                 <ToastItem key={t.id} toast={t} />

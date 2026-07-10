@@ -181,7 +181,7 @@ export function DesktopOverlay({
                         e.stopPropagation();
                         onSkipBackward();
                     }}
-                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                    className="group flex items-center justify-center w-11 h-11 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
                     aria-label={`后退 ${seekStepSeconds} 秒`}
                 >
                     <Icons.SkipBack className="w-5 h-5 md:w-8 md:h-8 text-white/80 group-hover:text-white" />
@@ -199,7 +199,7 @@ export function DesktopOverlay({
                         e.stopPropagation();
                         onSkipForward();
                     }}
-                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                    className="group flex items-center justify-center w-11 h-11 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
                     aria-label={`前进 ${seekStepSeconds} 秒`}
                 >
                     <Icons.FastForward className="w-5 h-5 md:w-8 md:h-8 text-white/80 group-hover:text-white" />
@@ -223,7 +223,7 @@ export function DesktopOverlay({
             {showToast && toastMessage && (
                 <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[200] animate-slide-up">
                     <div className="bg-[rgba(28,28,30,0.95)] backdrop-blur-[25px] rounded-[var(--radius-2xl)] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.6)] px-6 py-3 flex items-center gap-3 min-w-[200px]">
-                        <Icons.Check size={18} className="text-[#34c759] flex-shrink-0" />
+                        <Icons.Check size={18} className="text-[var(--color-success)] flex-shrink-0" />
                         <span className="text-white text-sm font-medium">{toastMessage}</span>
                     </div>
                 </div>

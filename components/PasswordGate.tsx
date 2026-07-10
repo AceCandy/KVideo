@@ -228,7 +228,7 @@ export function PasswordGate({
   const showManagedFields = loginMode === 'managed';
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--bg-color)] bg-[image:var(--bg-image)] text-[var(--text-color)]">
+    <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-[var(--bg-color)] bg-[image:var(--bg-image)] text-[var(--text-color)]">
       <div className="w-full max-w-md p-4">
         <form
           id="password-form"

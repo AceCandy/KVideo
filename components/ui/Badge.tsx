@@ -27,8 +27,6 @@ const BadgeComponent = memo(function Badge({
       style={{
         width: '0.875em',
         height: '0.875em',
-        transform: 'translateZ(0)',
-        willChange: 'auto',
       }}
     >
       {icon}
@@ -45,10 +43,6 @@ const BadgeComponent = memo(function Badge({
         ${variants[variant]}
         ${className}
       `}
-      style={{
-        transform: 'translateZ(0)',
-        willChange: 'auto',
-      }}
     >
       {icon && iconPosition === 'left' && iconElement}
       {children}

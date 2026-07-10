@@ -83,7 +83,7 @@ export function PremiumPasswordGate({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white">
+        <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black text-white">
             <div className="w-full max-w-md p-4">
                 <form
                     id="premium-password-form"

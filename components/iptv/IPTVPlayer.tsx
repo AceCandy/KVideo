@@ -170,7 +170,7 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-black flex"
+      className="fixed inset-0 z-[var(--z-modal)] bg-black flex"
       onMouseMove={resetControlsTimeout}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('[data-controls]') || (e.target as HTMLElement).closest('[data-sidebar]')) return;

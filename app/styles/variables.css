@@ -6,7 +6,7 @@
     --bg-color-light: #f2f4f7;
     --bg-image-light: none;
     --text-color-light: #1d1d1f;
-    --text-color-secondary-light: #6e6e73;
+    --text-color-secondary-light: #66666b;
     --accent-color-light: #0056b3;
     --accent-color-rgb-light: 0, 86, 179;
     --glass-bg-light: rgba(255, 255, 255, 0.95);
@@ -48,8 +48,9 @@
     --glass-hover: var(--glass-hover-light);
     --shadow-color: var(--shadow-color-light);
     --text-secondary: var(--text-color-secondary);
-    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
-    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
+    /* 次级文本向 ink 端加深，保证浅底下 WCAG AA ≥4.5:1（透明度派生会降至 2.75:1） */
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 85%, var(--text-color));
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 70%, var(--text-color));
 
     /* Player viewport defaults; runtime code may override these per viewport. */
     --kvideo-viewport-width: 100vw;
@@ -60,6 +61,19 @@
 
     --background: #f2f4f7;
     --foreground: #1d1d1f;
+
+    /* 语义状态色：success / error，跨主题统一 */
+    --color-success: #34c759;
+    --color-error: #ff3b30;
+
+    /* 语义 z-index 刻度：数值沿用既有顺序，仅命名化，层叠行为零变化 */
+    --z-drawer-backdrop: 1999;
+    --z-sticky: 2000;
+    --z-dropdown: 3000;
+    --z-backdrop: 9998;
+    --z-modal: 9999;
+    --z-toast: 10000;
+    --z-player-max: 2147483647;
 }
 
 body {
@@ -74,8 +88,8 @@ body {
     --glass-hover: var(--glass-hover-light);
     --shadow-color: var(--shadow-color-light);
     --text-secondary: var(--text-color-secondary);
-    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
-    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 85%, var(--text-color));
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 70%, var(--text-color));
 
     background-color: var(--bg-color);
     background-image: var(--bg-image);
@@ -99,8 +113,8 @@ body.dark,
     --glass-hover: var(--glass-hover-dark);
     --shadow-color: var(--shadow-color-dark);
     --text-secondary: var(--text-color-secondary);
-    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 82%, transparent);
-    --text-muted: color-mix(in srgb, var(--text-color-secondary) 72%, transparent);
+    --text-tertiary: color-mix(in srgb, var(--text-color-secondary) 85%, var(--text-color));
+    --text-muted: color-mix(in srgb, var(--text-color-secondary) 70%, var(--text-color));
 
     --background: #121212;
     --foreground: #f5f5f7;

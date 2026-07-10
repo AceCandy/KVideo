@@ -93,7 +93,7 @@ export function Modal({
                 role={role}
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className={`fixed top-1/2 left-1/2 z-[9999] w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 animate-slide-up ${className}`}
+                className={`fixed top-1/2 left-1/2 z-[var(--z-modal)] w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 animate-slide-up ${className}`}
             >
                 {children}
             </div>
