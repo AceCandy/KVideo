@@ -160,6 +160,20 @@ All dialogs now use `<Modal>`: `ConfirmDialog`, `ExportModal`, `AddSourceModal`,
 
 ---
 
+## Drawer / Overlay (preserve the underlying page)
+
+For interactions that must **not** unmount the underlying page (settings, watch history, favorites), use a global right-side drawer overlay instead of a route. An App Router route switch unmounts the page and loses local state (search results, playback, scroll); an overlay mounted in `app/layout.tsx` keeps the page alive underneath.
+
+- **Mount globally** inside `PasswordGate` in `app/layout.tsx`, beside `ScrollPositionManager` — it shares TV/Theme/Locale/auth context without entering the page tree.
+- **Layering** reuses the `WatchHistorySidebar` / `FavoritesSidebar` convention: backdrop `z-[var(--z-drawer-backdrop)]` (1999), panel `z-[var(--z-sticky)]` (2000). Both sit below `--z-backdrop` (9998) / `--z-modal` (9999), so nested child `<Modal>`s (AddSourceModal, ConfirmDialog, …) stack above the drawer with no extra work.
+- **Open/close state** lives in a non-persistent UI store (`lib/store/settings-ui-store.ts`) built on `createListenerSet` + `useSyncExternalStore` — same subscribe/notify shape as `settings-store` / `user-sources-store`, never mixed with persisted data stores. Entrypoints call `openSettings()`; the drawer reads `useSettingsOpen()`.
+- **A11y**: `role="dialog" aria-modal="true"`, `trapFocus` from `@/lib/accessibility/focus-management` (Tab cycle), a manual Escape listener, body scroll lock, and focus restore to the trigger on close. `trapFocus` itself does **not** restore focus — capture `document.activeElement` on open and refocus in the effect cleanup, the way `<Modal>` does.
+- Prefer a drawer over a route when the underlying page state is expensive to rebuild. Prefer a route when the surface is a top-level destination that must be deep-linkable/refreshable.
+
+Source: `SettingsDrawer` (settings), `WatchHistorySidebar`, `FavoritesSidebar`.
+
+---
+
 ## Common Mistakes
 
 - Splitting an unsplittable effect chain.

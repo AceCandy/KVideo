@@ -13,6 +13,11 @@
   100% { transform: rotate(-1deg); }
 }
 
+@keyframes drawer-slide-in {
+  from { transform: translate3d(100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
 .animate-jiggle {
   animation: jiggle 0.2s infinite;
 }

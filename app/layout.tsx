@@ -14,6 +14,7 @@ import { AdKeywordsInjector } from "@/components/AdKeywordsInjector";
 import { BackToTop } from "@/components/ui/BackToTop";
 import { ToastViewport } from "@/components/ui/Toast";
 import { ScrollPositionManager } from "@/components/ScrollPositionManager";
+import { SettingsDrawer } from "@/components/settings/SettingsDrawer";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { RuntimeFeaturesProvider } from "@/components/RuntimeFeaturesProvider";
 import { VideoTogetherController } from '@/components/VideoTogetherController';
@@ -138,6 +139,7 @@ export default async function RootLayout({
                   <BackToTop />
                   <ToastViewport />
                   <ScrollPositionManager />
+                  <SettingsDrawer />
                 </PasswordGate>
               </TVProvider>
               {vercelAnalyticsEnabled ? <Analytics /> : null}

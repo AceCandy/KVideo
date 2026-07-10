@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { openSettings } from '@/lib/store/settings-ui-store';
 import { User, Settings, Crown, Sun, Moon, LogOut } from 'lucide-react';
 import { getSession, clearSession } from '@/lib/store/auth-store';
 import { useTheme } from '@/components/ThemeProvider';
@@ -90,15 +90,14 @@ export function UserMenu({ isPremiumMode = false }: { isPremiumMode?: boolean })
             {open && (
                 <div className="absolute right-0 top-full mt-2 w-44 z-[var(--z-dropdown)]">
                     <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-md)] py-1 overflow-hidden" role="menu">
-                        <Link
-                            href="/settings"
-                            onClick={() => setOpen(false)}
+                        <button
+                            onClick={() => { setOpen(false); openSettings(); }}
                             role="menuitem"
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--text-color)_8%,transparent)] transition-colors"
                         >
                             <Settings size={16} />
                             设置
-                        </Link>
+                        </button>
                         {(canEnterPremium || isPremiumMode) && (
                             <button
                                 onClick={isPremiumMode ? goHome : goPremium}
