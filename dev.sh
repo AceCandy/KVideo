@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-ALLOW_LAN_ACCESS=1 PORT=3100 ACCESS_PASSWORD=065975 npm run dev
+ALLOW_LAN_ACCESS=1 PORT=3100 npm run dev
