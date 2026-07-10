@@ -53,8 +53,8 @@ async function handleTypesRequest(sourceList: any[]) {
                         sourceName: source.name,
                         categories: data.class || []
                     };
-                } catch (error) {
-                    console.error(`Failed to fetch categories from ${source.name}:`, error);
+                } catch {
+                    // 单个采集源失败（返回非 JSON / 超时等）属预期的部分失败，其它源照常聚合，静默避免 dev 刷屏。
                     return null;
                 }
             })

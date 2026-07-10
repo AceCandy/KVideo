@@ -57,7 +57,7 @@ async function handleCategoryRequest(
 
                 await assertSafeOutboundUrl(url.toString());
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 const response = await fetch(url.toString(), {
                     signal: controller.signal,
@@ -80,8 +80,8 @@ async function handleCategoryRequest(
                     type_name: item.type_name,
                     source: source.id,
                 }));
-            } catch (error) {
-                console.error(`Failed to fetch from ${source.name}:`, error);
+            } catch {
+                // 单个采集源失败（超时 / 返回非 JSON 等）属预期的部分失败，其它源照常返回，静默避免 dev 刷屏。
                 return [];
             }
         });
