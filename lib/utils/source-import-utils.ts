@@ -101,8 +101,9 @@ export function parseSourcesFromJson(jsonString: string): ImportResult {
 
 /**
  * Fetch and parse sources from a URL
+ * @param subscriptionId 若提供，会给返回的每个源打上该订阅 id 标记，用于刷新订阅时按订阅清理重写
  */
-export async function fetchSourcesFromUrl(url: string): Promise<ImportResult> {
+export async function fetchSourcesFromUrl(url: string, subscriptionId?: string): Promise<ImportResult> {
     const headers = {
         'Accept': 'application/json',
     };
@@ -127,7 +128,14 @@ export async function fetchSourcesFromUrl(url: string): Promise<ImportResult> {
     }
 
     const text = await response.text();
-    return parseSourcesFromJson(text);
+    const result = parseSourcesFromJson(text);
+
+    if (subscriptionId) {
+        result.normalSources = result.normalSources.map(s => ({ ...s, subscriptionId }));
+        result.premiumSources = result.premiumSources.map(s => ({ ...s, subscriptionId }));
+    }
+
+    return result;
 }
 
 /**

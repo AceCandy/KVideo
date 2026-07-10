@@ -52,8 +52,9 @@ export function useSubscriptionSync() {
                 }
 
                 // Fetch all subscriptions in parallel for better performance
+                // 传入 sub.id 打标记，使后续手动刷新能按订阅清理重写；merge+冷却行为不变
                 const results = await Promise.allSettled(
-                    subsToSync.map((sub: SourceSubscription) => fetchSourcesFromUrl(sub.url))
+                    subsToSync.map((sub: SourceSubscription) => fetchSourcesFromUrl(sub.url, sub.id))
                 );
 
                 // Process results

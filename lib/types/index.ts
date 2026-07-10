@@ -13,6 +13,7 @@ export interface VideoSource {
   enabled?: boolean;
   priority?: number;
   group?: 'normal' | 'premium'; // Categorize source type for routing
+  subscriptionId?: string; // 来源订阅 id；默认源/手动导入的源无此字段，刷新订阅时按此字段清理重写
 }
 
 // Source Subscription for auto-updating sources from a URL

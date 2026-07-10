@@ -207,7 +207,7 @@ export function useSettingsPage() {
     const handleAddSubscription = async (sub: SourceSubscription): Promise<boolean> => {
         // Verify we can fetch it
         try {
-            const result = await fetchSourcesFromUrl(sub.url);
+            const result = await fetchSourcesFromUrl(sub.url, sub.id);
 
             // Import the content
             handleImportLink(result, true);
@@ -242,19 +242,25 @@ export function useSettingsPage() {
 
     const handleRefreshSubscription = async (sub: SourceSubscription) => {
         try {
-            const result = await fetchSourcesFromUrl(sub.url);
-            handleImportLink(result, true);
+            const result = await fetchSourcesFromUrl(sub.url, sub.id);
 
-            // Update last updated timestamp
+            const currentSettings = settingsStore.getSettings();
+            // 删除该订阅之前带来的所有源（按 subscriptionId 过滤），默认源/手动源/其他订阅的源保留
+            const keptSources = currentSettings.sources.filter(s => s.subscriptionId !== sub.id);
+            const keptPremium = currentSettings.premiumSources.filter(s => s.subscriptionId !== sub.id);
+            // 新源已带 subscriptionId 标记，合并写入
+            const updatedSources = mergeSources(keptSources, result.normalSources);
+            const updatedPremiumSources = mergeSources(keptPremium, result.premiumSources);
+
             const updatedSubscriptions = subscriptions.map(s =>
                 s.id === sub.id ? { ...s, lastUpdated: Date.now() } : s
             );
-            setSubscriptions(updatedSubscriptions);
 
-            const currentSettings = settingsStore.getSettings();
             settingsStore.saveSettings({
                 ...currentSettings,
-                subscriptions: updatedSubscriptions
+                sources: updatedSources,
+                premiumSources: updatedPremiumSources,
+                subscriptions: updatedSubscriptions,
             });
         } catch {
             // 刷新单个订阅失败不阻断其他操作，静默处理
