@@ -11,12 +11,6 @@
  *    - Top region if 3+ videos are from that region
  * 3. RANDOMIZATION: Each query gets a random page_start offset (0-40) so the
  *    Douban API returns different results on each page load.
- * 4. INTERLEAVING: Results from all queries are round-robin interleaved with
- *    shuffled pick order per round — e.g. [B,A,C,A,C,B] instead of [A,B,C,A,B,C]
- * 5. DEDUPLICATION: Already-watched titles are filtered out, and duplicate movies
- *    across different queries are removed.
- * 6. PAGINATION: Supports page-based loading — each "page" fetches a new batch
- *    from all queries with incremented offsets.
  */
 
 import type { VideoHistoryItem } from '@/lib/types';
@@ -126,78 +120,4 @@ export function getWatchedTitles(history: VideoHistoryItem[]): Set<string> {
     }
   }
   return titles;
-}
-
-interface InterleavedMovie {
-  id: string;
-  title: string;
-  cover: string;
-  rate: string;
-  url: string;
-  /** Which recommendation query this came from */
-  sourceLabel: string;
-}
-
-/**
- * Fisher-Yates shuffle for an array (in-place).
- */
-function shuffleArray<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/**
- * Round-robin interleave movies from multiple query result arrays,
- * with shuffled pick order per round for better variety.
- * Removes duplicates (by title) and already-watched titles.
- *
- * Example with 3 sources [A1,A2,A3], [B1,B2], [C1]:
- * Round 0 (shuffled): → B1, A1, C1
- * Round 1 (shuffled): → A2, B2
- * Round 2 (shuffled): → A3
- */
-export function interleaveResults(
-  resultsByQuery: { label: string; movies: Array<{ id: string; title: string; cover: string; rate: string; url: string }> }[],
-  watchedTitles: Set<string>
-): InterleavedMovie[] {
-  const interleaved: InterleavedMovie[] = [];
-  // id 去重对齐 React key；title 去重保留给已观看过滤（历史记录无豆瓣 id）
-  const seenIds = new Set<string>();
-  const seenTitles = new Set<string>();
-
-  // Find the max length across all result arrays
-  const maxLen = Math.max(...resultsByQuery.map(r => r.movies.length), 0);
-  const numQueries = resultsByQuery.length;
-
-  for (let i = 0; i < maxLen; i++) {
-    // Shuffle the pick order for this round
-    const indices = Array.from({ length: numQueries }, (_, idx) => idx);
-    shuffleArray(indices);
-
-    for (const idx of indices) {
-      const result = resultsByQuery[idx];
-      if (i >= result.movies.length) continue;
-
-      const movie = result.movies[i];
-      const titleKey = movie.title.toLowerCase().trim();
-
-      // 同片在不同 query 下 title 可能存在空格/全角等细微差异，按 title 去重会漏；
-      // 以 id 为准去重，与 MovieGrid 的 key 维度一致
-      if (seenIds.has(movie.id)) continue;
-      if (seenTitles.has(titleKey)) continue;
-      if (watchedTitles.has(titleKey)) continue;
-
-      seenIds.add(movie.id);
-      seenTitles.add(titleKey);
-      interleaved.push({
-        ...movie,
-        sourceLabel: result.label,
-      });
-    }
-  }
-
-  return interleaved;
 }
