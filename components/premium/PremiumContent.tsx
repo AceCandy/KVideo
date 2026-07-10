@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { TagManager } from '@/components/home/TagManager';
-import { MovieGrid } from '@/components/home/MovieGrid';
 import { PremiumContentGrid } from './PremiumContentGrid';
 import { usePremiumTagManager } from '@/lib/hooks/usePremiumTagManager';
 import { usePremiumContent } from '@/lib/hooks/usePremiumContent';
-import { usePersonalizedRecommendations } from '@/components/home/hooks/usePersonalizedRecommendations';
+import type { Video } from '@/lib/types';
 
 interface PremiumContentProps {
     onSearch?: (query: string) => void;
 }
 
+/**
+ * 高级区主内容：标签筛选 + premium 源内容流。
+ * 不再展示「为你推荐」标签——个性化推荐统一收敛到导航的「猜你想看」入口。
+ */
 export function PremiumContent({ onSearch }: PremiumContentProps) {
     const {
         tags,
@@ -29,27 +31,6 @@ export function PremiumContent({ onSearch }: PremiumContentProps) {
         handleDragEnd,
     } = usePremiumTagManager();
 
-    const {
-        movies: recommendMovies,
-        loading: recommendLoading,
-        hasMore: recommendHasMore,
-        hasHistory,
-        prefetchRef: recommendPrefetchRef,
-        loadMoreRef: recommendLoadMoreRef,
-    } = usePersonalizedRecommendations(true);
-
-    // Track whether the recommendation tab is active
-    const [isRecommendSelected, setIsRecommendSelected] = useState(hasHistory);
-
-    useEffect(() => {
-        if (hasHistory) {
-            setIsRecommendSelected(true);
-        }
-    }, [hasHistory]);
-
-    const effectiveRecommendSelected = hasHistory && isRecommendSelected;
-
-    // Get the category value from selected tag
     const categoryValue = tags.find(t => t.id === selectedTag)?.value || '';
 
     const {
@@ -58,20 +39,15 @@ export function PremiumContent({ onSearch }: PremiumContentProps) {
         hasMore,
         prefetchRef,
         loadMoreRef,
-    } = usePremiumContent(effectiveRecommendSelected ? '' : categoryValue);
+    } = usePremiumContent(categoryValue);
 
-    const handleVideoClick = (video: any) => {
+    const handleVideoClick = (video: Video) => {
         if (onSearch) {
-            onSearch(video.vod_name || video.title);
+            onSearch(video.vod_name);
         }
     };
 
-    const handleRecommendSelect = () => {
-        setIsRecommendSelected(true);
-    };
-
     const handleRegularTagSelect = (tagId: string) => {
-        setIsRecommendSelected(false);
         setSelectedTag(tagId);
     };
 
@@ -79,7 +55,7 @@ export function PremiumContent({ onSearch }: PremiumContentProps) {
         <div className="animate-fade-in">
             <TagManager
                 tags={tags}
-                selectedTag={effectiveRecommendSelected ? '' : selectedTag}
+                selectedTag={selectedTag}
                 showTagManager={showTagManager}
                 newTagInput={newTagInput}
                 justAddedTag={justAddedTag}
@@ -91,32 +67,16 @@ export function PremiumContent({ onSearch }: PremiumContentProps) {
                 onAddTag={handleAddTag}
                 onDragEnd={handleDragEnd}
                 onJustAddedTagHandled={() => setJustAddedTag(false)}
-                recommendTag={hasHistory ? {
-                    label: '为你推荐',
-                    isSelected: effectiveRecommendSelected,
-                    onSelect: handleRecommendSelect,
-                } : undefined}
             />
 
-            {effectiveRecommendSelected ? (
-                <MovieGrid
-                    movies={recommendMovies}
-                    loading={recommendLoading}
-                    hasMore={recommendHasMore}
-                    onMovieClick={handleVideoClick}
-                    prefetchRef={recommendPrefetchRef}
-                    loadMoreRef={recommendLoadMoreRef}
-                />
-            ) : (
-                <PremiumContentGrid
-                    videos={videos}
-                    loading={loading}
-                    hasMore={hasMore}
-                    onVideoClick={handleVideoClick}
-                    prefetchRef={prefetchRef}
-                    loadMoreRef={loadMoreRef}
-                />
-            )}
+            <PremiumContentGrid
+                videos={videos}
+                loading={loading}
+                hasMore={hasMore}
+                onVideoClick={handleVideoClick}
+                prefetchRef={prefetchRef}
+                loadMoreRef={loadMoreRef}
+            />
         </div>
     );
 }
