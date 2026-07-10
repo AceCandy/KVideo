@@ -5,6 +5,8 @@ import {
   type Role,
 } from '@/lib/auth/permissions';
 
+export type LoginMode = 'none' | 'legacy_password' | 'managed';
+
 export interface SeedAccountInput {
   username: string;
   password: string;
@@ -34,6 +36,55 @@ export interface SessionPayload {
   customPermissions?: Permission[];
   mode: 'managed' | 'legacy';
   iat: number;
+}
+
+export interface SessionCookieProtocolRequest {
+  headers: {
+    get(name: string): string | null;
+  };
+  nextUrl: {
+    protocol: string;
+  };
+}
+
+export function resolveLoginMode({
+  managedAccountCount,
+  managedAuthEnabled,
+  managedAuthForced,
+  legacyAuthConfigured,
+}: {
+  managedAccountCount: number;
+  managedAuthEnabled: boolean;
+  managedAuthForced: boolean;
+  legacyAuthConfigured: boolean;
+}): LoginMode {
+  if (managedAccountCount > 0 || (managedAuthForced && managedAuthEnabled)) {
+    return 'managed';
+  }
+
+  return legacyAuthConfigured ? 'legacy_password' : 'none';
+}
+
+export function shouldUseSecureSessionCookie(request?: SessionCookieProtocolRequest): boolean {
+  if (process.env.NODE_ENV !== 'production') {
+    return false;
+  }
+
+  if (!request) {
+    return true;
+  }
+
+  const forwardedProtocol = request.headers
+    .get('x-forwarded-proto')
+    ?.split(',')[0]
+    ?.trim()
+    .toLowerCase();
+
+  if (forwardedProtocol) {
+    return forwardedProtocol === 'https';
+  }
+
+  return request.nextUrl.protocol === 'https:';
 }
 
 const PBKDF2_ITERATIONS = 120_000;

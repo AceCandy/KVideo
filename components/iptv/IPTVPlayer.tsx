@@ -13,6 +13,7 @@ import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { M3UChannel } from '@/lib/utils/m3u-parser';
 import type { IPTVSource } from '@/lib/store/iptv-store';
 import { settingsStore, DEFAULT_SEEK_STEP_SECONDS } from '@/lib/store/settings-store';
+import { shouldHidePlayerCursor } from '@/lib/player/cursor-visibility';
 import { ChannelSidebar } from './iptv-sidebar/ChannelSidebar';
 import { TopBar } from './iptv-controls/TopBar';
 import { BottomControls } from './iptv-controls/BottomControls';
@@ -101,6 +102,13 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
     return Math.max(0, Math.min(100, (currentTime / duration) * 100));
   }, [currentTime, duration, seekWindow]);
 
+  const shouldHideCursor = shouldHidePlayerCursor({
+    isFullscreen,
+    isPlaying,
+    showControls,
+    hasInteractiveOverlay: showSidebar || Boolean(error),
+  });
+
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
     if (document.fullscreenElement) {
@@ -171,6 +179,7 @@ export function IPTVPlayer({ channel, onClose, channels, onChannelChange, channe
     <div
       ref={containerRef}
       className="fixed inset-0 z-[var(--z-modal)] bg-black flex"
+      style={{ cursor: shouldHideCursor ? 'none' : undefined }}
       onMouseMove={resetControlsTimeout}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('[data-controls]') || (e.target as HTMLElement).closest('[data-sidebar]')) return;

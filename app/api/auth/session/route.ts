@@ -7,6 +7,6 @@ export async function GET(request: NextRequest) {
   return createSessionStatusResponse(request);
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   return logoutResponse();
 }
