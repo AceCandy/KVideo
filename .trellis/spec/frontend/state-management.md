@@ -86,6 +86,8 @@ Do not split an effect from the state it writes, and do not change a stable depe
 
 > Example: `AccountSettings`' `fetchAccounts` is consumed by two effects with deps `[]` and `[canManageAccounts, fetchAccounts, loginMode]`. These were preserved exactly during the split.
 
+> Lesson (player auto-source-switch): when an effect must reset on "the user changed episode/title", depend on the **URL source of truth** (`searchParams.get('episode')` / `episodeParam`), not on derived state another hook may pulse. `useVideoPlayer` calls `setCurrentEpisode(0)` on every source change before restoring the real index (`lib/hooks/useVideoPlayer.ts`), so `currentEpisode` flashes N→0→N during an in-page switch. A `[title, currentEpisode]` effect fires mid-switch, wipes `triedSourcesRef`, and re-selects a just-failed source — dead loop on "non-zero episode + all sources fail". `router.replace` only changes the query string, so URL params stay stable across a switch; `[title, episodeParam]` resets only on a real episode/title change.
+
 ---
 
 ## Store Subscriptions

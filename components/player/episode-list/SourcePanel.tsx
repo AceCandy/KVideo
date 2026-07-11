@@ -20,6 +20,8 @@ interface SourcePanelProps {
   onSourceChange: (source: SourceInfo) => void;
   currentResolution?: VideoResolutionInfo | null;
   sourceResolutions?: Record<string, ResolutionInfo | null>;
+  // 各源 manifest 可达性（key: `${source}:${id}`），用于把不可播源排到列表后部
+  sourcePlayables?: Record<string, boolean>;
   sourceSectionCollapsed?: boolean;
   onSourceSectionCollapseChange?: (collapsed: boolean) => void;
 }
@@ -30,6 +32,7 @@ export function SourcePanel({
   onSourceChange,
   currentResolution,
   sourceResolutions,
+  sourcePlayables,
   sourceSectionCollapsed = false,
   onSourceSectionCollapseChange,
 }: SourcePanelProps) {
@@ -71,11 +74,15 @@ export function SourcePanel({
 
   const sortedSources = useMemo(() => {
     return [...sources].sort((a, b) => {
+      // 不可播源（probe 判定 manifest 不可达，且非当前源）沉到底；当前源豁免、未知不下沉
+      const badA = a.source !== currentSource && sourcePlayables?.[`${a.source}:${a.id}`] === false ? 1 : 0;
+      const badB = b.source !== currentSource && sourcePlayables?.[`${b.source}:${b.id}`] === false ? 1 : 0;
+      if (badA !== badB) return badA - badB;
       const latA = mergedLatencies[a.source] ?? a.latency ?? Infinity;
       const latB = mergedLatencies[b.source] ?? b.latency ?? Infinity;
       return latA - latB;
     });
-  }, [mergedLatencies, sources]);
+  }, [mergedLatencies, sources, sourcePlayables, currentSource]);
 
   const isSourceListOpen = !sourceSectionCollapsed && sourceExpanded;
   const forceExpandedForCurrentSource = !!currentSource && shouldExpandForCurrentSource(sortedSources, currentSource);
@@ -191,6 +198,7 @@ export function SourcePanel({
     const latency = mergedLatencies[source.source] ?? source.latency;
     const globalIndex = sortedSources.indexOf(source);
     const badge = getResBadge(source, isCurrent);
+    const unplayable = !isCurrent && sourcePlayables?.[`${source.source}:${source.id}`] === false;
     return (
       <SourceRow
         key={`${source.source}-${globalIndex}`}
@@ -199,6 +207,7 @@ export function SourcePanel({
         latency={latency}
         badge={badge}
         globalIndex={globalIndex}
+        unplayable={unplayable}
         onSelect={handleSourceSelect}
         registerRef={registerRef}
       />

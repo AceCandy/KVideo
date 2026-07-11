@@ -1,0 +1,29 @@
+{
+  "id": "playable-source-priority",
+  "name": "playable-source-priority",
+  "title": "播放页优先选择可播放源并自动切换",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "AceCandy",
+  "assignee": "AceCandy",
+  "createdAt": "2026-07-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-11-auto-switch-on-playback-error",
+    "07-11-source-sort-by-playable"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

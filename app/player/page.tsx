@@ -96,15 +96,25 @@ function PlayerContent() {
   }, [missingRequiredParams, router]);
 
   const [pendingFallback, setPendingFallback] = useState(false);
+  // 自动换源进行中标记，用于在 loading 态显示"正在尝试其他源"提示
+  const [autoSwitching, setAutoSwitching] = useState(false);
   const [discoveredSources, setDiscoveredSources] = useState<SourceInfo[]>([]);
   const groupedSourcesRef = useRef<SourceInfo[]>([]);
 
-  const handleSourceUnavailable = useCallback(() => {
+  // 本次剧集（title+episode）已尝试过的源，避免播放失败时在多个源之间死循环切换
+  const triedSourcesRef = useRef<Set<string>>(new Set());
+
+  // Pick the next untried source (lowest latency) and navigate to it.
+  // Returns true when a switch was issued, false when no candidate remains.
+  const handleSourceUnavailable = useCallback((): boolean => {
     const groupedSources = groupedSourcesRef.current;
-    const alternatives = groupedSources.filter((item) => item.source !== source);
+    const tried = triedSourcesRef.current;
+    // 当前源已失败（detail 阶段或播放阶段），标记为已尝试，避免再次选中（含手动选源场景）
+    if (source) tried.add(source);
+    const alternatives = groupedSources.filter((item) => !tried.has(item.source));
     if (alternatives.length === 0) {
       setPendingFallback(true);
-      return;
+      return false;
     }
 
     setPendingFallback(false);
@@ -119,6 +129,10 @@ function PlayerContent() {
     params.set('source', best.source);
     params.set('title', title || '');
     if (episodeParam) params.set('episode', episodeParam);
+    // 从当前播放进度续播，避免换源后从头开始
+    if (playerTimeRef.current > 1) {
+      params.set('t', Math.floor(playerTimeRef.current).toString());
+    }
     if (gsKey) {
       params.set('gs', gsKey);
     } else if (groupedSources.length > 1) {
@@ -126,7 +140,9 @@ function PlayerContent() {
       if (newKey) params.set('gs', newKey);
     }
     if (isPremium) params.set('premium', '1');
+    setAutoSwitching(true);
     router.replace(`/player?${params.toString()}`, { scroll: false });
+    return true;
   }, [episodeParam, gsKey, isPremium, router, source, title]);
 
   const {
@@ -140,6 +156,19 @@ function PlayerContent() {
     setVideoError,
     fetchVideoDetails,
   } = useVideoPlayer(videoId, source, episodeParam, isReversed, handleSourceUnavailable);
+
+  // 切换剧集（title 或 episode 变化）时清空已尝试源集合；
+  // 仅换源（source 变化）不触发重置，tried 在一次播放会话内累积。
+  // 用 URL 的 episodeParam 而非 currentEpisode：useVideoPlayer 在换源时会先把
+  // currentEpisode 置 0 再恢复，会导致 tried 被误重置、防死循环失效。
+  useEffect(() => {
+    triedSourcesRef.current = new Set();
+  }, [title, episodeParam]);
+
+  // 自动换源后新源加载结束（loading 转 false）时清除提示标记
+  useEffect(() => {
+    if (!loading) setAutoSwitching(false);
+  }, [loading]);
 
   const groupedSources = useMemo<SourceInfo[]>(() => {
     let sources: SourceInfo[] = [];
@@ -305,7 +334,7 @@ function PlayerContent() {
       episodeIndex: currentEpisode,
     }));
   }, [groupedSources, currentEpisode]);
-  const { resolutions: sourceResolutions } = useResolutionProbe(probeList);
+  const { resolutions: sourceResolutions, playable: sourcePlayables } = useResolutionProbe(probeList);
 
   const handleResolutionDetected = useCallback((info: VideoResolutionInfo) => {
     setDetectedResolution(info);
@@ -409,7 +438,9 @@ function PlayerContent() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--accent-color)] border-t-transparent mb-4"></div>
-            <p className="text-[var(--text-color-secondary)]">正在加载视频详情...</p>
+            <p className="text-[var(--text-color-secondary)]">
+              {autoSwitching ? '当前源无法播放，正在尝试其他源…' : '正在加载视频详情...'}
+            </p>
           </div>
         ) : videoError && !videoData ? (
           <PlayerError
@@ -455,6 +486,7 @@ function PlayerContent() {
                   videoTitle={videoData?.vod_name || title || ''}
                   episodeName={videoData?.episodes?.[currentEpisode]?.name || ''}
                   externalTimeRef={playerTimeRef}
+                  onPlaybackSourceUnavailable={handleSourceUnavailable}
                   onResolutionDetected={handleResolutionDetected}
                 />
               </div>
@@ -524,6 +556,7 @@ function PlayerContent() {
                     currentSource={currentSourceId || source || ''}
                     currentResolution={detectedResolution}
                     sourceResolutions={sourceResolutions}
+                    sourcePlayables={sourcePlayables}
                     sourceSectionCollapsed={isSourceSectionCollapsed}
                     onSourceSectionCollapseChange={setIsSourceSectionCollapsed}
                     episodeSectionCollapsed={isEpisodeSectionCollapsed}

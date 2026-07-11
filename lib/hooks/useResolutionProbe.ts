@@ -25,6 +25,7 @@ interface ResolutionProbeEvent {
   episodeIndex?: number;
   resolution?: ResolutionInfo | null;
   resolutionOrigin?: 'manifest' | 'hint';
+  playable?: boolean;
 }
 
 function getSourceConfigsForProbe(videos: VideoToProbe[]): VideoSource[] {
@@ -52,9 +53,11 @@ function getSourceConfigsForProbe(videos: VideoToProbe[]): VideoSource[] {
  */
 export function useResolutionProbe(videos: VideoToProbe[]): {
   resolutions: Record<string, ResolutionInfo | null>;
+  playable: Record<string, boolean>;
   isProbing: boolean;
 } {
   const [resolutions, setResolutions] = useState<Record<string, ResolutionInfo | null>>({});
+  const [playable, setPlayable] = useState<Record<string, boolean>>({});
   const [isProbing, setIsProbing] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const completedKeysRef = useRef<Set<string>>(new Set());
@@ -135,6 +138,10 @@ export function useResolutionProbe(videos: VideoToProbe[]): {
               inFlightKeys.delete(requestKey);
               completedKeys.add(requestKey);
 
+              if (typeof data.playable === 'boolean') {
+                setPlayable((previous) => ({ ...previous, [resultKey]: data.playable as boolean }));
+              }
+
               if (data.resolution) {
                 const resolution: ResolutionInfo = {
                   ...data.resolution,
@@ -171,5 +178,5 @@ export function useResolutionProbe(videos: VideoToProbe[]): {
     };
   }, [videos]);
 
-  return { resolutions, isProbing };
+  return { resolutions, playable, isProbing };
 }

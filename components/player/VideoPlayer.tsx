@@ -25,6 +25,8 @@ interface VideoPlayerProps {
   externalTimeRef?: React.MutableRefObject<number>;
   // Resolution callback
   onResolutionDetected?: (info: import('./hooks/useVideoResolution').VideoResolutionInfo) => void;
+  // 播放失败且重试均尽后触发自动换源；返回 true 表示已切换源，false 表示无可用候选源
+  onPlaybackSourceUnavailable?: () => boolean;
 }
 
 export function VideoPlayer({
@@ -40,6 +42,7 @@ export function VideoPlayer({
   episodeName,
   externalTimeRef,
   onResolutionDetected,
+  onPlaybackSourceUnavailable,
 }: VideoPlayerProps) {
   const [videoError, setVideoError] = useState<string>('');
   const [useProxy, setUseProxy] = useState(false);
@@ -149,7 +152,13 @@ export function VideoPlayer({
       return;
     }
 
-    setVideoError(error);
+    // 代理重试也失败（或无代理重试模式）→ 尝试自动换源。
+    // 返回 true 表示已切换源（本组件因 key 含 source 即将重挂载，无需再显示错误）；
+    // 返回 false 表示所有候选源都失败，回落到错误页。
+    const switched = onPlaybackSourceUnavailable?.() ?? false;
+    if (!switched) {
+      setVideoError(error);
+    }
   };
 
   const handleRetry = () => {

@@ -12,6 +12,7 @@ export function SourceRow({
   latency,
   badge,
   globalIndex,
+  unplayable,
   onSelect,
   registerRef,
 }: SourceRowProps) {
@@ -30,6 +31,7 @@ export function SourceRow({
           ? 'bg-[var(--accent-color)] text-white shadow-[0_4px_12px_color-mix(in_srgb,var(--accent-color)_50%,transparent)]'
           : 'bg-[var(--glass-bg)] hover:bg-[var(--glass-hover)] text-[var(--text-color)] border border-[var(--glass-border)] cursor-pointer'
         }
+        ${unplayable ? 'opacity-60' : ''}
       `}
       aria-current={isCurrent ? 'true' : undefined}
     >
@@ -57,6 +59,11 @@ export function SourceRow({
               {badge.label}
             </span>
           ) : null}
+          {unplayable && (
+            <span className="inline-flex items-center px-1 py-0 rounded text-[9px] font-bold text-white bg-gray-400/70">
+              不可播
+            </span>
+          )}
         </div>
         {source.remarks && !badge && (
           <div className="text-[10px] text-[var(--text-color-secondary)] truncate mt-0.5">{source.remarks}</div>

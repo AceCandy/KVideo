@@ -101,17 +101,19 @@ async function probeOne(video: ProbeRequest, providedConfigs: Map<string, VideoS
   episodeIndex?: number;
   resolution: ResolutionProbeLabel | null;
   resolutionOrigin: 'manifest' | 'hint';
+  // manifest 是否成功拉取，作为该源"可播性"的粗判信号
+  playable: boolean;
 }> {
   try {
     const sourceConfig = providedConfigs.get(video.source) || getSourceById(video.source);
     if (!sourceConfig) {
-      return { id: video.id, source: video.source, episodeIndex: video.episodeIndex, resolution: null, resolutionOrigin: 'manifest' };
+      return { id: video.id, source: video.source, episodeIndex: video.episodeIndex, resolution: null, resolutionOrigin: 'manifest', playable: false };
     }
 
     // 1. Get detail to find first episode URL
     const detail = await getVideoDetail(video.id, sourceConfig);
     if (!detail.episodes || detail.episodes.length === 0) {
-      return { id: video.id, source: video.source, episodeIndex: video.episodeIndex, resolution: null, resolutionOrigin: 'manifest' };
+      return { id: video.id, source: video.source, episodeIndex: video.episodeIndex, resolution: null, resolutionOrigin: 'manifest', playable: false };
     }
 
     const episodeIndex = typeof video.episodeIndex === 'number'
@@ -119,7 +121,7 @@ async function probeOne(video: ProbeRequest, providedConfigs: Map<string, VideoS
       : 0;
     const targetUrl = detail.episodes[episodeIndex]?.url || detail.episodes[0]?.url;
     if (!targetUrl) {
-      return { id: video.id, source: video.source, episodeIndex, resolution: null, resolutionOrigin: 'manifest' };
+      return { id: video.id, source: video.source, episodeIndex, resolution: null, resolutionOrigin: 'manifest', playable: false };
     }
 
     const detailHint = extractResolutionHint(detail.vod_remarks, targetUrl);
@@ -135,11 +137,12 @@ async function probeOne(video: ProbeRequest, providedConfigs: Map<string, VideoS
         episodeIndex,
         resolution: detailHint,
         resolutionOrigin: detailHint ? 'hint' : 'manifest',
+        playable: false,
       };
     }
 
     const probed = await probeManifestResolution(targetUrl, m3u8Content, detailHint);
-    return { id: video.id, source: video.source, episodeIndex, resolution: probed.resolution, resolutionOrigin: probed.origin };
+    return { id: video.id, source: video.source, episodeIndex, resolution: probed.resolution, resolutionOrigin: probed.origin, playable: true };
   } catch {
     return {
       id: video.id,
@@ -147,6 +150,7 @@ async function probeOne(video: ProbeRequest, providedConfigs: Map<string, VideoS
       episodeIndex: video.episodeIndex,
       resolution: null,
       resolutionOrigin: 'manifest',
+      playable: false,
     };
   }
 }
@@ -198,7 +202,7 @@ export async function POST(request: NextRequest) {
               const result = await probeOne(current, sourceConfigs);
               safeEnqueue(`data: ${JSON.stringify(result)}\n\n`);
             } catch {
-              const fallback = { id: current.id, source: current.source, resolution: null, resolutionOrigin: 'manifest' };
+              const fallback = { id: current.id, source: current.source, resolution: null, resolutionOrigin: 'manifest', playable: false };
               safeEnqueue(`data: ${JSON.stringify(fallback)}\n\n`);
             }
           }

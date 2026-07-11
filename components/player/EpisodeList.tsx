@@ -18,6 +18,7 @@ export function EpisodeList({
   onSourceChange,
   currentResolution,
   sourceResolutions,
+  sourcePlayables,
   sourceSectionCollapsed = false,
   onSourceSectionCollapseChange,
   episodeSectionCollapsed = false,
@@ -34,6 +35,7 @@ export function EpisodeList({
           onSourceChange={onSourceChange!}
           currentResolution={currentResolution}
           sourceResolutions={sourceResolutions}
+          sourcePlayables={sourcePlayables}
           sourceSectionCollapsed={sourceSectionCollapsed}
           onSourceSectionCollapseChange={onSourceSectionCollapseChange}
         />

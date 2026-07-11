@@ -28,6 +28,7 @@ export interface EpisodeListProps {
   onSourceChange?: (source: SourceInfo) => void;
   currentResolution?: VideoResolutionInfo | null;
   sourceResolutions?: Record<string, ResolutionInfo | null>;
+  sourcePlayables?: Record<string, boolean>;
   sourceSectionCollapsed?: boolean;
   onSourceSectionCollapseChange?: (collapsed: boolean) => void;
   episodeSectionCollapsed?: boolean;
@@ -40,6 +41,7 @@ export interface SourceRowProps {
   latency: number | undefined;
   badge: ResolutionBadge | null;
   globalIndex: number;
+  unplayable?: boolean;
   onSelect: (source: SourceInfo) => void;
   registerRef: (key: string, el: HTMLButtonElement | null) => void;
 }
