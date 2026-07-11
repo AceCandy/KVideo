@@ -6,6 +6,10 @@ import { useSubscriptionSync } from '@/lib/hooks/useSubscriptionSync';
 import { settingsStore, type SortOption } from '@/lib/store/settings-store';
 import { userSourcesStore } from '@/lib/store/user-sources-store';
 
+// 记录当前标签页会话内最后搜索过的 query，用于区分「站内返回」与「首次带 query 进入」：
+// 从播放页等返回到同一 query 时不再重新发起搜索，避免返回后整页重新加载变慢。
+const SESSION_SEARCH_KEY = 'kvideo_search_session';
+
 export function useHomePage() {
     useSubscriptionSync();
     const router = useRouter();
@@ -124,6 +128,7 @@ export function useHomePage() {
         setQuery(searchQuery);
         setHasSearched(true);
         executeSearch(searchQuery);
+        sessionStorage.setItem(SESSION_SEARCH_KEY, searchQuery);
     }, [executeSearch]);
 
     // Load cached results on mount
@@ -141,6 +146,10 @@ export function useHomePage() {
                 setHasSearched(true);
                 loadCachedResults(cached.results, cached.availableSources);
                 hasSearchedWithSourcesRef.current = true;
+                sessionStorage.setItem(SESSION_SEARCH_KEY, urlQuery);
+            } else if (sessionStorage.getItem(SESSION_SEARCH_KEY) === urlQuery) {
+                // 从站内（如播放页）返回到同一 query：缓存已失效也不再重新搜索，
+                // 仅靠上方 setQuery 预填搜索框，等用户主动点击搜索。
             } else {
                 handleSearch(urlQuery);
             }
@@ -159,6 +168,7 @@ export function useHomePage() {
         hasSearchedWithSourcesRef.current = false;
         resetSearch();
         router.replace('/', { scroll: false });
+        sessionStorage.removeItem(SESSION_SEARCH_KEY);
     }, [resetSearch, router]);
 
     return {
