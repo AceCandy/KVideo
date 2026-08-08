@@ -11,10 +11,17 @@ import {
   type StoredAccountRecord,
 } from '@/lib/server/auth-helpers';
 import { normalizePermissions, normalizeRole } from '@/lib/auth/permissions';
-import { ACCOUNTS, effectiveAdminPassword } from '@/lib/server/auth/config';
+import { getAccounts, getEffectiveAdminPassword } from '@/lib/server/auth/config';
 import { getRedisClient, isManagedAuthConfigured } from '@/lib/server/auth/runtime';
 
 const MANAGED_ACCOUNTS_KEY = 'auth:accounts:v1';
+
+export class ManagedAuthStorageError extends Error {
+  constructor(operation: 'read' | 'write', cause?: unknown) {
+    super(`Managed auth storage ${operation} failed`, { cause });
+    this.name = 'ManagedAuthStorageError';
+  }
+}
 
 function isStoredAccountRecord(value: unknown): value is StoredAccountRecord {
   if (!value || typeof value !== 'object') return false;
@@ -47,18 +54,24 @@ export async function readManagedAccounts(): Promise<StoredAccountRecord[]> {
     const stored = await redis.get(MANAGED_ACCOUNTS_KEY);
     if (!Array.isArray(stored)) return [];
     return stored.filter(isStoredAccountRecord).map(normalizeStoredAccount);
-  } catch {
-    return [];
+  } catch (error) {
+    console.error('Managed auth Redis read failed:', error);
+    throw new ManagedAuthStorageError('read', error);
   }
 }
 
 export async function saveManagedAccounts(accounts: StoredAccountRecord[]): Promise<void> {
   const redis = getRedisClient();
   if (!redis) {
-    throw new Error('Managed auth storage unavailable');
+    throw new ManagedAuthStorageError('write', new Error('Managed auth storage unavailable'));
   }
 
-  await redis.set(MANAGED_ACCOUNTS_KEY, accounts);
+  try {
+    await redis.set(MANAGED_ACCOUNTS_KEY, accounts);
+  } catch (error) {
+    console.error('Managed auth Redis write failed:', error);
+    throw new ManagedAuthStorageError('write', error);
+  }
 }
 
 /** 由 env 派生首批 managed 账号种子（admin + ACCOUNTS 列表） */
@@ -66,6 +79,7 @@ export function getBootstrapSeeds(): SeedAccountInput[] {
   const seeds: SeedAccountInput[] = [];
   const usernames = new Set<string>();
 
+  const effectiveAdminPassword = getEffectiveAdminPassword();
   if (effectiveAdminPassword) {
     usernames.add('admin');
     seeds.push({
@@ -77,7 +91,7 @@ export function getBootstrapSeeds(): SeedAccountInput[] {
     });
   }
 
-  for (const account of parseBootstrapAccounts(ACCOUNTS)) {
+  for (const account of parseBootstrapAccounts(getAccounts())) {
     const username = ensureUniqueUsername(account.username, usernames, account.name);
     usernames.add(username);
     seeds.push({ ...account, username });

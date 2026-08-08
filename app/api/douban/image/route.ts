@@ -1,10 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { assertSafeOutboundUrl } from '@/lib/server/url-guard';
+import { buildDoubanImageCandidates } from '@/lib/server/douban-image';
 
 export const runtime = 'edge';
 
-export async function GET(request: NextRequest) {
+const REQUEST_HEADERS = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    Accept: 'image/jpeg,image/png,image/gif,*/*;q=0.8',
+    Referer: 'https://movie.douban.com/',
+};
+
+export async function GET(request: Request) {
     const ip = getClientIp(request);
     const rl = await rateLimit(`douban-img:${ip}`, { limit: 600, windowSec: 60 });
     if (!rl.success) {
@@ -20,56 +28,44 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Missing image URL' }, { status: 400 });
     }
 
-    try {
-        await assertSafeOutboundUrl(imageUrl);
-    } catch {
-        return NextResponse.json({ error: 'Blocked: target address not allowed' }, { status: 403 });
-    }
+    let lastStatus = 502;
+    let lastError = 'Error fetching image';
 
-    try {
-        const imageResponse = await fetch(imageUrl, {
-            headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                Accept: 'image/jpeg,image/png,image/gif,*/*;q=0.8',
-                Referer: 'https://movie.douban.com/',
-            },
-        });
+    for (const candidate of buildDoubanImageCandidates(imageUrl)) {
+        let imageResponse: Response;
+
+        try {
+            await assertSafeOutboundUrl(candidate);
+            imageResponse = await fetch(candidate, { headers: REQUEST_HEADERS, redirect: 'error' });
+        } catch {
+            // 线路不可达,换下一个镜像
+            continue;
+        }
 
         if (!imageResponse.ok) {
-            return NextResponse.json(
-                { error: imageResponse.statusText },
-                { status: imageResponse.status }
-            );
+            lastStatus = imageResponse.status;
+            lastError = imageResponse.statusText || 'Error fetching image';
+            continue;
         }
-
-        const contentType = imageResponse.headers.get('content-type');
 
         if (!imageResponse.body) {
-            return NextResponse.json(
-                { error: 'Image response has no body' },
-                { status: 500 }
-            );
+            lastStatus = 500;
+            lastError = 'Image response has no body';
+            continue;
         }
 
-        // 创建响应头
         const headers = new Headers();
+        const contentType = imageResponse.headers.get('content-type');
         if (contentType) {
             headers.set('Content-Type', contentType);
         }
-
-        // 设置缓存头
         headers.set('Cache-Control', 'public, max-age=15720000, s-maxage=15720000');
 
-        // 直接返回图片流
         return new Response(imageResponse.body, {
             status: 200,
             headers,
         });
-    } catch {
-        return NextResponse.json(
-            { error: 'Error fetching image' },
-            { status: 500 }
-        );
     }
+
+    return NextResponse.json({ error: lastError }, { status: lastStatus });
 }

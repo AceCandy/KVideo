@@ -6,13 +6,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   signSessionPayload,
   verifySessionToken,
+  shouldUseSecureSessionCookie,
   SESSION_MAX_AGE_SECONDS,
+  type SessionCookieProtocolRequest,
   type SessionPayload,
 } from '@/lib/server/auth-helpers';
 import { normalizePermissions, type Permission, type Role } from '@/lib/auth/permissions';
 import {
   SESSION_COOKIE_NAME,
-  PERSIST_SESSION,
   resolveSessionSecretFromEnv,
 } from '@/lib/server/auth/config';
 
@@ -95,27 +96,35 @@ export async function getServerSession(request: NextRequest): Promise<ServerAuth
   return sessionPayloadToServerSession(payload);
 }
 
-export function applySessionCookie(response: NextResponse, token: string, persist: boolean): void {
+export function applySessionCookie(
+  response: NextResponse,
+  token: string,
+  persist: boolean,
+  request?: SessionCookieProtocolRequest
+): void {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: shouldUseSecureSessionCookie(request),
     path: '/',
     ...(persist ? { maxAge: SESSION_MAX_AGE_SECONDS } : {}),
   });
 }
 
-export function clearSessionCookie(response: NextResponse): NextResponse {
+export function clearSessionCookie(
+  response: NextResponse,
+  request?: SessionCookieProtocolRequest
+): NextResponse {
   response.cookies.set(SESSION_COOKIE_NAME, '', {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: shouldUseSecureSessionCookie(request),
     path: '/',
     maxAge: 0,
   });
   return response;
 }
 
-export function logoutResponse(): NextResponse {
-  return clearSessionCookie(NextResponse.json({ success: true }));
+export function logoutResponse(request?: SessionCookieProtocolRequest): NextResponse {
+  return clearSessionCookie(NextResponse.json({ success: true }), request);
 }

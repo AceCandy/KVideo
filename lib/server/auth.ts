@@ -13,6 +13,7 @@ export {
   logoutResponse,
 } from '@/lib/server/auth/session';
 export type { PublicAuthConfig, AccountInfo } from '@/lib/server/auth/service';
+export { ManagedAuthStorageError } from '@/lib/server/auth/account-repository';
 export {
   getPublicAuthConfig,
   hasServerPermission,

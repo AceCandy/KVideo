@@ -52,6 +52,7 @@ export interface SourceBadge {
   id: string;
   name: string;
   count: number;
+  baseUrl?: string;
   typeName?: string;
 }
 

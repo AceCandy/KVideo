@@ -1,5 +1,4 @@
-import { Redis } from '@upstash/redis';
-import type { NextRequest } from 'next/server';
+import { getRedisClient } from '@/lib/server/redis';
 
 /** 限流配置 */
 export interface RateLimitOptions {
@@ -27,23 +26,6 @@ const memoryBuckets = new Map<string, MemoryBucket>();
 const MEMORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 let lastMemoryCleanup = 0;
 
-let cachedRedis: Redis | null | undefined;
-
-function getRedis(): Redis | null {
-  if (cachedRedis !== undefined) return cachedRedis;
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    cachedRedis = null;
-    return cachedRedis;
-  }
-  try {
-    cachedRedis = Redis.fromEnv();
-    return cachedRedis;
-  } catch {
-    cachedRedis = null;
-    return cachedRedis;
-  }
-}
-
 /**
  * 固定窗口限流。优先 Redis（跨实例一致），无 Redis 或 Redis 故障时降级为进程内计数。
  * 不抛错；调用方据 success 决定是否返回 429。
@@ -52,7 +34,7 @@ export async function rateLimit(
   key: string,
   { limit, windowSec }: RateLimitOptions
 ): Promise<RateLimitResult> {
-  const redis = getRedis();
+  const redis = getRedisClient();
   if (redis) {
     try {
       const redisKey = `ratelimit:${key}`;
@@ -101,7 +83,7 @@ function memoryRateLimit(key: string, limit: number, windowSec: number): RateLim
  * 获取客户端 IP。优先 cf-connecting-ip（Cloudflare 直填的真实客户端 IP，最可信），
  * 其次 x-forwarded-for 首段（其他反向代理），再回退 request.ip，最后 'unknown'。
  */
-export function getClientIp(request: NextRequest): string {
+export function getClientIp(request: Request): string {
   const cfIp = request.headers.get('cf-connecting-ip');
   if (cfIp) return cfIp.trim();
   const xff = request.headers.get('x-forwarded-for');

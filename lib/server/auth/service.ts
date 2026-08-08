@@ -7,12 +7,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   createStoredAccount,
   hashPassword,
+  isBootstrapAdminCredential,
   normalizeUsername,
   parseBootstrapAccounts,
   verifyPassword,
   signPremiumToken,
   verifyPremiumToken,
   type StoredAccountRecord,
+  resolveLoginMode,
+  type SessionCookieProtocolRequest,
 } from '@/lib/server/auth-helpers';
 import {
   hasResolvedPermission,
@@ -22,20 +25,21 @@ import {
   type Role,
 } from '@/lib/auth/permissions';
 import {
-  ACCOUNTS,
-  PREMIUM_PASSWORD,
-  PERSIST_SESSION,
-  SUBSCRIPTION_SOURCES,
-  IPTV_SOURCES,
-  MERGE_SOURCES,
-  DANMAKU_API_URL,
-  effectiveAdminPassword,
+  getAccounts,
+  getPremiumPassword,
+  getPersistSession,
+  getSubscriptionSources,
+  getIptvSources,
+  getMergeSources,
+  getDanmakuApiUrl,
+  getEffectiveAdminPassword,
   generateLegacyProfileId,
   isLegacyAuthConfigured,
   PREMIUM_COOKIE_NAME,
   resolvePremiumSecretFromEnv,
   type LoginMode,
 } from '@/lib/server/auth/config';
+import { getRuntimeEnvValue } from '@/lib/server/runtime-env';
 import { getRuntimeFeatures } from '@/lib/server/runtime-features';
 import {
   ensureManagedAccountsBootstrapped,
@@ -62,11 +66,11 @@ export interface PublicRuntimeConfig {
 function getPublicRuntimeConfig(): PublicRuntimeConfig {
   const runtimeFeatures = getRuntimeFeatures();
   return {
-    persistSession: PERSIST_SESSION,
-    subscriptionSources: SUBSCRIPTION_SOURCES,
-    iptvSources: runtimeFeatures.iptvEnabled ? IPTV_SOURCES : '',
-    mergeSources: MERGE_SOURCES,
-    danmakuApiUrl: DANMAKU_API_URL,
+    persistSession: getPersistSession(),
+    subscriptionSources: getSubscriptionSources(),
+    iptvSources: runtimeFeatures.iptvEnabled ? getIptvSources() : '',
+    mergeSources: getMergeSources(),
+    danmakuApiUrl: getDanmakuApiUrl(),
   };
 }
 
@@ -87,16 +91,18 @@ export interface AccountInfo {
 }
 
 export async function getPublicAuthConfig(): Promise<PublicAuthConfig> {
+  const managedAuthEnabled = isManagedAuthConfigured();
   const managedAccountCount = await getManagedAccountCount();
-  const loginMode: LoginMode = managedAccountCount > 0
-    ? 'managed'
-    : isLegacyAuthConfigured()
-      ? 'legacy_password'
-      : 'none';
+  const loginMode: LoginMode = resolveLoginMode({
+    managedAccountCount,
+    managedAuthEnabled,
+    managedAuthForced: getRuntimeEnvValue('MANAGED_AUTH_ENABLED') === 'true',
+    legacyAuthConfigured: isLegacyAuthConfigured(),
+  });
 
   return {
     hasAuth: loginMode !== 'none',
-    hasPremiumAuth: !!PREMIUM_PASSWORD,
+    hasPremiumAuth: !!getPremiumPassword(),
     loginMode,
     ...getPublicRuntimeConfig(),
   };
@@ -106,12 +112,39 @@ async function authenticateManagedLogin(username: string, password: string): Pro
   const normalizedUsername = normalizeUsername(username);
   if (!normalizedUsername || !password) return null;
 
+  const usesBootstrapAdminCredential = isBootstrapAdminCredential(
+    normalizedUsername,
+    password,
+    getEffectiveAdminPassword()
+  );
   const accounts = await ensureManagedAccountsBootstrapped();
-  const account = accounts.find((item) => item.username === normalizedUsername);
-  if (!account) return null;
-
-  const valid = await verifyPassword(password, account.passwordSalt, account.passwordHash);
-  if (!valid) return null;
+  let account = accounts.find((item) => item.username === normalizedUsername);
+  if (!account) {
+    if (!usesBootstrapAdminCredential) return null;
+    account = await createStoredAccount({
+      username: 'admin',
+      password,
+      name: '超级管理员',
+      role: 'super_admin',
+      customPermissions: [],
+    });
+    await saveManagedAccounts([...accounts, account]);
+  } else {
+    const valid = await verifyPassword(password, account.passwordSalt, account.passwordHash);
+    if (!valid) {
+      if (!usesBootstrapAdminCredential) return null;
+      const nextPassword = await hashPassword(password);
+      account = {
+        ...account,
+        passwordHash: nextPassword.hash,
+        passwordSalt: nextPassword.salt,
+        updatedAt: Date.now(),
+      };
+      await saveManagedAccounts(
+        accounts.map((item) => item.id === account?.id ? account : item)
+      );
+    }
+  }
 
   return {
     accountId: account.id,
@@ -128,6 +161,7 @@ async function authenticateManagedLogin(username: string, password: string): Pro
 async function authenticateLegacyLogin(password: string): Promise<ServerAuthSession | null> {
   if (!password) return null;
 
+  const effectiveAdminPassword = getEffectiveAdminPassword();
   if (effectiveAdminPassword && password === effectiveAdminPassword) {
     return {
       accountId: 'legacy-admin',
@@ -141,7 +175,7 @@ async function authenticateLegacyLogin(password: string): Promise<ServerAuthSess
     };
   }
 
-  for (const account of parseBootstrapAccounts(ACCOUNTS)) {
+  for (const account of parseBootstrapAccounts(getAccounts())) {
     if (account.password !== password) continue;
     return {
       accountId: `legacy:${account.username}`,
@@ -190,7 +224,8 @@ export async function validatePremiumAccess(
     return true;
   }
 
-  if (!PREMIUM_PASSWORD) {
+  const premiumPassword = getPremiumPassword();
+  if (!premiumPassword) {
     return true;
   }
 
@@ -198,7 +233,7 @@ export async function validatePremiumAccess(
     return false;
   }
 
-  if (body.password === PREMIUM_PASSWORD) {
+  if (body.password === premiumPassword) {
     return true;
   }
 
@@ -219,7 +254,10 @@ export function isSuperAdminSession(session: ServerAuthSession): boolean {
   return session.role === 'super_admin';
 }
 
-export async function createLoginResponse(session: ServerAuthSession): Promise<NextResponse> {
+export async function createLoginResponse(
+  session: ServerAuthSession,
+  request?: SessionCookieProtocolRequest
+): Promise<NextResponse> {
   const config = await getPublicAuthConfig();
   const token = await signSession(session);
   if (!token) {
@@ -232,7 +270,7 @@ export async function createLoginResponse(session: ServerAuthSession): Promise<N
     ...config,
   });
 
-  applySessionCookie(response, token, PERSIST_SESSION);
+  applySessionCookie(response, token, getPersistSession(), request);
   return response;
 }
 
@@ -275,7 +313,7 @@ export async function hasPremiumAccess(request: NextRequest): Promise<boolean> {
   if (session && (session.role === 'super_admin' || session.role === 'admin')) {
     return true;
   }
-  if (!PREMIUM_PASSWORD) {
+  if (!getPremiumPassword()) {
     return true;
   }
   const token = request.cookies.get(PREMIUM_COOKIE_NAME)?.value;
@@ -303,7 +341,7 @@ export async function listAccountInfo(): Promise<AccountInfo[]> {
   const legacyAccounts: AccountInfo[] = [];
   let index = 0;
 
-  if (effectiveAdminPassword) {
+  if (getEffectiveAdminPassword()) {
     legacyAccounts.push({
       id: 'legacy-admin',
       username: 'admin',
@@ -316,7 +354,7 @@ export async function listAccountInfo(): Promise<AccountInfo[]> {
     index += 1;
   }
 
-  for (const account of parseBootstrapAccounts(ACCOUNTS)) {
+  for (const account of parseBootstrapAccounts(getAccounts())) {
     legacyAccounts.push({
       id: `legacy-${index}`,
       username: account.username,

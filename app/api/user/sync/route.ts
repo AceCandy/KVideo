@@ -1,13 +1,18 @@
-import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientIp } from '@/lib/server/rate-limit';
 import { authenticationRequiredResponse } from '@/lib/server/api-responses';
 import { getServerSession } from '@/lib/server/auth';
+import { getRedisClient } from '@/lib/server/redis';
 
 // 确保这行代码在整个文件中只出现一次
 export const runtime = 'edge';
 
-const redis = Redis.fromEnv();
+function syncUnavailableResponse() {
+  return NextResponse.json(
+    { error: 'Server-side sync is not configured on this deployment' },
+    { status: 503 }
+  );
+}
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
@@ -20,9 +25,14 @@ export async function GET(request: NextRequest) {
   }
   const session = await getServerSession(request);
   const profileId = session?.profileId;
-  
+
   if (!profileId) {
     return authenticationRequiredResponse();
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return syncUnavailableResponse();
   }
 
   try {
@@ -48,9 +58,14 @@ export async function POST(request: NextRequest) {
   }
   const session = await getServerSession(request);
   const profileId = session?.profileId;
-  
+
   if (!profileId) {
     return authenticationRequiredResponse();
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return syncUnavailableResponse();
   }
 
   try {
