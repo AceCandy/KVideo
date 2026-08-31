@@ -12,6 +12,7 @@ import { LatencyBadge } from '@/components/ui/LatencyBadge';
 import { PosterCard } from '@/components/ui/PosterCard';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { Video } from '@/lib/types';
+import { htmlToText } from '@/lib/utils/html';
 import { parseVideoTitle } from '@/lib/utils/video';
 import { storeGroupedSources } from '@/lib/utils/grouped-sources-cache';
 import type { ResolutionInfo } from '@/lib/hooks/useResolutionProbe';
@@ -47,6 +48,11 @@ export const VideoGroupCard = memo<VideoGroupCardProps>(({
     isProbing = false,
 }) => {
     const { representative, videos, name } = group;
+    const displayRemarks = useMemo(() => {
+        const preferredVideo = videos.find((video) => video === representative && video.vod_remarks)
+            ?? videos.find((video) => video.vod_remarks);
+        return htmlToText(preferredVideo?.vod_remarks);
+    }, [representative, videos]);
 
     // Best latency from the group, preferring real-time updates
     const bestLatency = useMemo(() => {
@@ -183,6 +189,14 @@ export const VideoGroupCard = memo<VideoGroupCardProps>(({
                             <h4 className="font-semibold text-sm text-[var(--text-color)] line-clamp-2 min-h-[2.5rem] mb-1">
                                 {cleanTitle}
                             </h4>
+                            {displayRemarks && (
+                                <p
+                                    className="text-xs text-[var(--text-color-secondary)] mt-1 line-clamp-1"
+                                    title={displayRemarks}
+                                >
+                                    {displayRemarks}
+                                </p>
+                            )}
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 {resolution ? (
                                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${resolution.color}`}>
